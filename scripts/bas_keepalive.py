@@ -516,7 +516,7 @@ def read_terminal_text(page) -> str:
 
 def ensure_terminal(page, tag: str):
     # 1. 若已有终端输入框，直接返回
-    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
+    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 3000)
     if ta:
         try:
             ta.click()
@@ -524,23 +524,45 @@ def ensure_terminal(page, tag: str):
             pass
         return ta
 
-    log(tag, "未检测到现有终端，尝试创建 ...")
+    log(tag, "未检测到现有终端，尝试通过菜单与命令面板创建 ...")
 
-    # 2. 依次尝试点击顶部菜单栏中的 "Terminal" -> "New Terminal"
-    for frame in iter_frames(page):
-        try:
-            term_menu = frame.get_by_text("Terminal", exact=True).first
-            if term_menu.count() > 0 and term_menu.is_visible():
-                term_menu.click()
+    # 2. 策略一：点击顶部左侧汉堡菜单（≡）-> Terminal -> New Terminal
+    try:
+        menu_clicked = False
+        menu_btn = find_in_frames(
+            page,
+            '[aria-label*="Application Menu"], .menubar-menu-button, .codicon-menu, div.titlebar-left [role="button"]',
+            3000,
+        )
+        if menu_btn:
+            menu_btn.click()
+            menu_clicked = True
+        else:
+            # 坐标兜底：汉堡菜单位于标题栏左上方 (x=15, y=18)
+            page.mouse.click(15, 18)
+            menu_clicked = True
+
+        if menu_clicked:
+            time.sleep(1)
+            term_item = find_in_frames(
+                page,
+                '[role="menuitem"]:has-text("Terminal"), .monaco-action-bar :text("Terminal"), span:has-text("Terminal")',
+                3000,
+            )
+            if term_item:
+                term_item.click()
                 time.sleep(1)
-                new_term = frame.get_by_text("New Terminal", exact=False).first
-                if new_term.count() > 0 and new_term.is_visible():
+                new_term = find_in_frames(
+                    page,
+                    '[role="menuitem"]:has-text("New Terminal"), span:has-text("New Terminal")',
+                    3000,
+                )
+                if new_term:
                     new_term.click()
-                    log(tag, "已通过 Terminal 菜单创建终端")
-                    time.sleep(3)
-                    break
-        except Exception:
-            continue
+                    log(tag, "✅ 已通过 ≡ 应用菜单触发 New Terminal")
+                    time.sleep(4)
+    except Exception as e:
+        log(tag, f"菜单触发终端异常: {e}")
 
     ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
     if ta:
@@ -550,8 +572,44 @@ def ensure_terminal(page, tag: str):
             pass
         return ta
 
-    # 3. 快捷键尝试：Ctrl+` 与 Ctrl+Backquote
-    for key in ("Control+Backquote", "Control+`"):
+    # 3. 策略二：利用顶部 Command Palette 命令面板（F1 / Ctrl+Shift+P / 点击搜索框）
+    try:
+        # 尝试快捷键唤起命令面板
+        page.keyboard.press("F1")
+        time.sleep(1)
+        cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
+        if not cmd_input:
+            # 点击顶部中央搜索框 (x=500, y=18)
+            search_box = find_in_frames(
+                page,
+                'input[placeholder*="Search"], div.search-label, .quick-input-widget',
+                2000,
+            )
+            if search_box:
+                search_box.click()
+            else:
+                page.mouse.click(500, 18)
+            time.sleep(1)
+            cmd_input = find_in_frames(page, "input.quick-input-input", 3000)
+
+        if cmd_input:
+            cmd_input.fill(">Terminal: Create New Terminal")
+            time.sleep(1)
+            page.keyboard.press("Enter")
+            time.sleep(4)
+    except Exception as e:
+        log(tag, f"命令面板触发终端异常: {e}")
+
+    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
+    if ta:
+        try:
+            ta.click()
+        except Exception:
+            pass
+        return ta
+
+    # 4. 策略三：界面快捷键兜底
+    for key in ("Control+Backquote", "Control+grave", "Control+Shift+Backquote"):
         try:
             page.keyboard.press(key)
             time.sleep(2)
@@ -562,30 +620,20 @@ def ensure_terminal(page, tag: str):
         except Exception:
             pass
 
-    # 4. Command Palette (F1)
-    try:
-        page.keyboard.press("F1")
-        time.sleep(1)
-        page.keyboard.type("Terminal: Create New Terminal", delay=30)
-        page.keyboard.press("Enter")
-        time.sleep(3)
-        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
-        if ta:
-            ta.click()
-            return ta
-    except Exception:
-        pass
-
-    # 5. 按钮匹配回退
+    # 5. 策略四：面板切换按钮匹配
     click_if_found(
         page,
         [
+            'button[title*="Toggle Panel"]',
+            'button[aria-label*="Toggle Panel"]',
+            '.codicon-layout-panel-bottom',
+            '.codicon-layout-panel',
             'button[title*="New Terminal"]',
-            'button[aria-label*="New Terminal"]',
             'a[title*="New Terminal"]',
         ],
-        5000,
+        4000,
     )
+
     ta = find_in_frames(page, "textarea.xterm-helper-textarea", 10000)
     if not ta:
         raise RuntimeError("无法定位终端（xterm textarea）")
