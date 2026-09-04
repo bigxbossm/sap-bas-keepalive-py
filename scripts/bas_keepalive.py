@@ -558,16 +558,6 @@ def maximize_terminal(page, tag: str):
     return False
 
 
-def toggle_screen_reader_mode(page, tag: str):
-    """开启屏幕阅读模式（强制 xterm 禁用 Canvas，使用 DOM 文本渲染）。"""
-    try:
-        page.keyboard.press("Alt+F1")
-        time.sleep(0.5)
-        log(tag, "已触发 Alt+F1 切换屏幕阅读/DOM文本模式")
-    except Exception as e:
-        log(tag, f"切换屏幕阅读模式跳过: {e}")
-
-
 def _prepare_terminal(page, ta, tag: str):
     if ta:
         try:
@@ -575,7 +565,6 @@ def _prepare_terminal(page, ta, tag: str):
         except Exception:
             pass
         maximize_terminal(page, tag)
-        toggle_screen_reader_mode(page, tag)
     return ta
 
 
@@ -971,6 +960,12 @@ def keepalive_one(account: dict, index: int) -> bool:
             # 优先使用编辑器/终端健康检查截图，若无则使用登录控制台截图
             final_screenshot = None
             try:
+                dismiss_dialog(active_page, 1000)
+                try:
+                    active_page.keyboard.press("Escape")
+                except Exception:
+                    pass
+                time.sleep(0.5)
                 final_screenshot = active_page.screenshot(full_page=False)
             except Exception:
                 final_screenshot = login_screenshot
