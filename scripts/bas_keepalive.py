@@ -76,12 +76,11 @@ HEALTHCHECK_TASKS = [
 
 LOGIN_TIMEOUT_MS = 60_000
 HEALTH_CMD_TMPL = (
-    'echo HEALTHCHECK-$(date +%H:%M:%S); '
-    'P=$(pgrep -x supervisord | head -1); echo SV-PID=$P; '
-    'test -f /tmp/.sv-bootstrapped && echo MARKER-EXISTS || echo NO-MARKER; '
+    'echo HC_START_{nonce}; '
+    'P=$(pgrep -x supervisord | head -1); echo SV_PID=$P; '
+    'test -f /tmp/.sv-bootstrapped && echo MARKER=EXISTS || echo MARKER=MISSING; '
     'supervisorctl -c {conf} status 2>&1; '
-    'T_RUN=$(supervisorctl -c {conf} status 2>&1 | grep -c "RUNNING"); '
-    'printf "\\033]0;HEALTHCHECK:PID=$P:RUN=$T_RUN:MARKER=1\\007"'
+    'echo HC_END_{nonce}'
 )
 
 
@@ -541,6 +540,18 @@ def enter_workspace(page, context, space: str, tag: str):
 def maximize_terminal(page, tag: str):
     """最大化终端窗口，便于展示全部命令及日志。"""
     try:
+        # 先判断是否已是最大化状态
+        for frame in iter_frames(page):
+            try:
+                is_max = frame.evaluate(
+                    "() => !!document.querySelector('.part.panel.maximized, .panel.maximized')"
+                )
+                if is_max:
+                    log(tag, "终端面板已处于最大化状态")
+                    return True
+            except Exception:
+                pass
+
         max_btn = find_in_frames(
             page,
             'a[aria-label*="Toggle Maximize Panel"], a[aria-label*="Maximize Panel"], .codicon-chevron-up, button[title*="Toggle Maximize Panel"]',
@@ -558,13 +569,35 @@ def maximize_terminal(page, tag: str):
     return False
 
 
-def _prepare_terminal(page, ta, tag: str):
-    if ta:
+def focus_terminal(page, ta=None):
+    """确保终端及辅助输入框获得焦点。"""
+    for frame in iter_frames(page):
         try:
-            ta.click()
+            ok = frame.evaluate(
+                """() => {
+                    const ta = document.querySelector('textarea.xterm-helper-textarea');
+                    if (ta) { ta.focus(); return true; }
+                    return false;
+                }"""
+            )
+            if ok:
+                break
         except Exception:
             pass
-        maximize_terminal(page, tag)
+
+    for frame in iter_frames(page):
+        try:
+            loc = frame.locator('.xterm-screen, canvas.xterm-text-layer, .terminal-wrapper').first
+            if loc and loc.is_visible():
+                loc.click(force=True)
+                break
+        except Exception:
+            pass
+
+
+def _prepare_terminal(page, ta, tag: str):
+    maximize_terminal(page, tag)
+    focus_terminal(page, ta)
     return ta
 
 
@@ -572,7 +605,7 @@ def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
     """多策略读取终端输出：
     1. xterm 内存 Buffer 与 Selection 提取（穿透 Canvas 限制）
     2. DOM / Accessibility 文本读取（.xterm-rows / .xterm-accessibility-tree）
-    3. VS Code 终端标签 OSC 0 标题状态提取（HEALTHCHECK:PID=...）
+    3. VS Code 终端标签 OSC 0 标题状态提取
     """
     for frame in iter_frames(page):
         # 1. 尝试直接从 xterm 实例内存 Buffer 读取
@@ -593,7 +626,7 @@ def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
                                     if (l) lines.push(l.translateToString(true));
                                 }
                                 const res = lines.join('\\n').trim();
-                                if (res && (res.includes('HEALTHCHECK') || res.includes('SV-PID='))) {
+                                if (res) {
                                     return res;
                                 }
                             }
@@ -603,7 +636,6 @@ def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
                 }"""
             )
             if xterm_res:
-                log(tag, "✅ 通过 xterm 实例内存 Buffer 提取到终端输出")
                 return xterm_res.replace('\xa0', ' ')
         except Exception:
             pass
@@ -622,7 +654,7 @@ def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
                         const els = document.querySelectorAll(sel);
                         if (els && els.length > 0) {
                             const str = Array.from(els).map(l => l.textContent || '').join('\\n').trim();
-                            if (str && (str.includes('HEALTHCHECK') || str.includes('SV-PID='))) {
+                            if (str) {
                                 return str;
                             }
                         }
@@ -631,28 +663,7 @@ def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
                 }"""
             )
             if dom_text:
-                log(tag, "✅ 通过 DOM 元素提取到终端输出")
                 return dom_text.replace('\xa0', ' ')
-        except Exception:
-            pass
-
-        # 3. 尝试从 VS Code 终端 Tab 标题 (OSC 0 title) 读取状态
-        try:
-            tab_status = frame.evaluate(
-                """() => {
-                    const matches = document.querySelectorAll('[title*="HEALTHCHECK"], [aria-label*="HEALTHCHECK"], .tab-label, .terminal-tabs span');
-                    for (const m of matches) {
-                        const attr = ((m.getAttribute('title') || '') + ' ' + (m.getAttribute('aria-label') || '') + ' ' + (m.textContent || '')).trim();
-                        if (attr.includes('HEALTHCHECK:PID=')) {
-                            return attr;
-                        }
-                    }
-                    return '';
-                }"""
-            )
-            if tab_status:
-                log(tag, f"✅ 通过终端 Tab 标题 (OSC 0) 读取到状态: {tab_status}")
-                return tab_status
         except Exception:
             pass
 
@@ -682,7 +693,6 @@ def ensure_terminal(page, tag: str):
             menu_btn.click()
             menu_clicked = True
         else:
-            # 坐标兜底：汉堡菜单位于标题栏左上方 (x=15, y=18)
             page.mouse.click(15, 18)
             menu_clicked = True
 
@@ -712,14 +722,12 @@ def ensure_terminal(page, tag: str):
     if ta:
         return _prepare_terminal(page, ta, tag)
 
-    # 3. 策略二：利用顶部 Command Palette 命令面板（F1 / Ctrl+Shift+P / 点击搜索框）
+    # 3. 策略二：利用顶部 Command Palette 命令面板
     try:
-        # 尝试快捷键唤起命令面板
         page.keyboard.press("F1")
         time.sleep(1)
         cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
         if not cmd_input:
-            # 点击顶部中央搜索框 (x=500, y=18)
             search_box = find_in_frames(
                 page,
                 'input[placeholder*="Search"], div.search-label, .quick-input-widget',
@@ -775,92 +783,160 @@ def ensure_terminal(page, tag: str):
     return _prepare_terminal(page, ta, tag)
 
 
-def paste_command(page, cmd: str, ta) -> bool:
-    """向终端注入命令并回车。"""
-    try:
-        origin = re.match(r"(https?://[^/]+)", page.url).group(1)
-        page.context.grant_permissions(
-            ["clipboard-read", "clipboard-write"], origin=origin
-        )
-        page.evaluate("c => navigator.clipboard.writeText(c)", cmd)
+def paste_command(page, cmd: str, ta=None) -> bool:
+    """向终端注入命令并回车执行。"""
+    focus_terminal(page, ta)
+    time.sleep(0.3)
+    page.keyboard.press("Control+c")
+    time.sleep(0.5)
+
+    injected = False
+    # 策略一：直接通过 xterm.js 实例执行 paste
+    for frame in iter_frames(page):
         try:
-            ta.click()
+            injected = frame.evaluate(
+                """(command) => {
+                    const els = document.querySelectorAll('.terminal, .xterm, .terminal-wrapper, textarea.xterm-helper-textarea');
+                    for (const el of els) {
+                        for (const k of Object.keys(el)) {
+                            const v = el[k];
+                            if (!v || typeof v !== 'object') continue;
+                            const term = v.buffer ? v : (v._terminal || v.terminal || v._xterm || v.xterm || v.raw);
+                            if (term) {
+                                if (typeof term.focus === 'function') term.focus();
+                                if (typeof term.paste === 'function') {
+                                    term.paste(command + '\\r');
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    return false;
+                }""",
+                cmd,
+            )
+            if injected:
+                time.sleep(0.5)
+                break
         except Exception:
             pass
-        page.keyboard.press("Control+v")
-        page.keyboard.press("Enter")
-        return True
-    except Exception as e:
-        log("TERMINAL", f"剪贴板粘贴异常: {e}")
+
+    if not injected:
+        # 策略二：剪贴板写入并粘贴
         try:
-            ta.click()
-            page.keyboard.insert_text(cmd)
+            origin = re.match(r"(https?://[^/]+)", page.url).group(1)
+            page.context.grant_permissions(
+                ["clipboard-read", "clipboard-write"], origin=origin
+            )
+            page.evaluate("c => navigator.clipboard.writeText(c)", cmd)
+            focus_terminal(page, ta)
+            page.keyboard.press("Control+v")
+            time.sleep(0.3)
             page.keyboard.press("Enter")
-            return True
-        except Exception:
-            return False
+            injected = True
+        except Exception as e:
+            log("TERMINAL", f"剪贴板操作异常: {e}")
+            try:
+                focus_terminal(page, ta)
+                page.keyboard.insert_text(cmd)
+                time.sleep(0.3)
+                page.keyboard.press("Enter")
+                injected = True
+            except Exception:
+                pass
+
+    focus_terminal(page, ta)
+    page.keyboard.press("Enter")
+    return injected
 
 
 def health_check(editor_page, tag: str) -> dict:
-    """在 IDE 终端执行 supervisord 状态查询并断言（来自实战验证的脚本）。"""
-    result = {"sv_pid": None, "marker": None, "tasks": {}, "raw": ""}
+    """在 IDE 终端执行 supervisord 状态查询并断言。"""
+    result = {
+        "sv_pid": None,
+        "marker": None,
+        "tasks": {t: None for t in HEALTHCHECK_TASKS},
+        "raw": "",
+    }
 
     log(tag, "⏳ 等待 .bashrc 钩子引导 supervisord ...")
     time.sleep(BOOTSTRAP_WAIT_SEC)
     dismiss_ide_notifications(editor_page)
 
     ta = ensure_terminal(editor_page, tag)
-    cmd = HEALTH_CMD_TMPL.format(conf=SUPERVISOR_CONF)
-    log(tag, "注入健康检查命令 ...")
+    nonce = uuid.uuid4().hex[:8]
+    start_tag = f"HC_START_{nonce}"
+    end_tag = f"HC_END_{nonce}"
+
+    cmd = HEALTH_CMD_TMPL.format(conf=SUPERVISOR_CONF, nonce=nonce)
+    log(tag, f"注入健康检查命令 (nonce={nonce}) ...")
     if not paste_command(editor_page, cmd, ta):
         raise RuntimeError("终端命令注入失败")
 
     # 轮询等待健康检查命令在 bash 中执行并生成完整回显
     log(tag, "⏳ 等待健康检查命令输出 ...")
     text = ""
-    deadline = time.time() + 25
+    deadline = time.time() + 30
+    raw_text = ""
     while time.time() < deadline:
-        time.sleep(3)
-        text = read_terminal_text(editor_page, ta=ta, tag=tag)
-        if "HEALTHCHECK" in text and ("SV-PID=" in text or "PID=" in text or "MARKER" in text):
+        time.sleep(2.5)
+        raw_text = read_terminal_text(editor_page, ta=ta, tag=tag)
+        if start_tag in raw_text and end_tag in raw_text:
+            text = raw_text.split(start_tag, 1)[1].split(end_tag, 1)[0].strip()
+            log(tag, "✅ 已捕获当前命令完整回显区间")
             break
 
-    result["raw"] = text
-    if not text or "HEALTHCHECK" not in text:
-        raise RuntimeError("健康检查命令注入失败（终端无回显）")
+    if not text and start_tag in raw_text:
+        text = raw_text.split(start_tag, 1)[1].strip()
 
-    m = re.search(r"SV-PID=(\d+)", text) or re.search(r"PID=(\d+)", text)
+    result["raw"] = text or raw_text
+    if not text:
+        raise RuntimeError("健康检查命令未生成有效回显（未能定位执行标识）")
+
+    m = re.search(r"SV_PID=(\d+)", text) or re.search(r"SV-PID=(\d+)", text) or re.search(r"PID=(\d+)", text)
     result["sv_pid"] = int(m.group(1)) if m else None
-    result["marker"] = ("MARKER-EXISTS" in text) or ("MARKER=1" in text)
+    result["marker"] = ("MARKER=EXISTS" in text) or ("MARKER-EXISTS" in text)
 
     for task in HEALTHCHECK_TASKS:
         m_task = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", text, re.M)
         if m_task:
             result["tasks"][task] = int(m_task.group(1))
-
-    # 若 tab 标题回传了整体任务运行数（如 RUN=6）且进程正常
-    m_run = re.search(r"RUN=(\d+)", text)
-    if m_run and int(m_run.group(1)) >= len(HEALTHCHECK_TASKS):
-        for task in HEALTHCHECK_TASKS:
-            if result["tasks"].get(task) is None:
-                result["tasks"][task] = result["sv_pid"]
+        else:
+            m_alt = re.search(rf"{re.escape(task)}\s+RUNNING\s+pid\s*(\d+)", text)
+            if m_alt:
+                result["tasks"][task] = int(m_alt.group(1))
 
     # 自动修复：仅对未 RUNNING 的任务 start all（不影响已运行任务），复查一次
     dead = [t for t, pid in result["tasks"].items() if pid is None]
     if dead and AUTO_FIX and HEALTHCHECK_TASKS:
         log(tag, f"🔧 发现未运行任务 {dead}，执行 supervisorctl start all ...")
+        fix_nonce = uuid.uuid4().hex[:8]
+        fix_start = f"FIX_START_{fix_nonce}"
+        fix_end = f"FIX_END_{fix_nonce}"
         fix_cmd = (
+            f"echo {fix_start}; "
             f"supervisorctl -c {SUPERVISOR_CONF} start all >/dev/null 2>&1; "
-            f"sleep 3; supervisorctl -c {SUPERVISOR_CONF} status"
+            f"sleep 3; supervisorctl -c {SUPERVISOR_CONF} status 2>&1; "
+            f"echo {fix_end}"
         )
         paste_command(editor_page, fix_cmd, ta)
-        time.sleep(8)
-        text = read_terminal_text(editor_page, ta=ta, tag=tag)
-        result["raw"] += "\n--- after autofix ---\n" + text
+        fix_deadline = time.time() + 20
+        fix_text = ""
+        while time.time() < fix_deadline:
+            time.sleep(2.5)
+            r_text = read_terminal_text(editor_page, ta=ta, tag=tag)
+            if fix_start in r_text and fix_end in r_text:
+                fix_text = r_text.split(fix_start, 1)[1].split(fix_end, 1)[0].strip()
+                break
+        result["raw"] += "\n--- after autofix ---\n" + (fix_text or r_text)
         for task in HEALTHCHECK_TASKS:
-            m = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", text, re.M)
+            m = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", result["raw"], re.M)
             if m and result["tasks"][task] is None:
                 result["tasks"][task] = int(m.group(1))
+            else:
+                m_alt = re.search(rf"{re.escape(task)}\s+RUNNING\s+pid\s*(\d+)", result["raw"])
+                if m_alt and result["tasks"][task] is None:
+                    result["tasks"][task] = int(m_alt.group(1))
 
     return result
 
@@ -961,11 +1037,7 @@ def keepalive_one(account: dict, index: int) -> bool:
             final_screenshot = None
             try:
                 dismiss_dialog(active_page, 1000)
-                try:
-                    active_page.keyboard.press("Escape")
-                except Exception:
-                    pass
-                time.sleep(0.5)
+                time.sleep(1)
                 final_screenshot = active_page.screenshot(full_page=False)
             except Exception:
                 final_screenshot = login_screenshot
