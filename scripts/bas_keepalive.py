@@ -881,13 +881,15 @@ def health_check(editor_page, tag: str) -> dict:
     while time.time() < deadline:
         time.sleep(2.5)
         raw_text = read_terminal_text(editor_page, ta=ta, tag=tag)
-        if start_tag in raw_text and end_tag in raw_text:
-            text = raw_text.split(start_tag, 1)[1].split(end_tag, 1)[0].strip()
+        m_span = re.search(
+            rf"(?:^|[\r\n]+){re.escape(start_tag)}\s*[\r\n]+(.*?)[\r\n]+{re.escape(end_tag)}",
+            raw_text,
+            re.DOTALL,
+        )
+        if m_span:
+            text = m_span.group(1).strip()
             log(tag, "✅ 已捕获当前命令完整回显区间")
             break
-
-    if not text and start_tag in raw_text:
-        text = raw_text.split(start_tag, 1)[1].strip()
 
     result["raw"] = text or raw_text
     if not text:
@@ -925,8 +927,13 @@ def health_check(editor_page, tag: str) -> dict:
         while time.time() < fix_deadline:
             time.sleep(2.5)
             r_text = read_terminal_text(editor_page, ta=ta, tag=tag)
-            if fix_start in r_text and fix_end in r_text:
-                fix_text = r_text.split(fix_start, 1)[1].split(fix_end, 1)[0].strip()
+            m_fix = re.search(
+                rf"(?:^|[\r\n]+){re.escape(fix_start)}\s*[\r\n]+(.*?)[\r\n]+{re.escape(fix_end)}",
+                r_text,
+                re.DOTALL,
+            )
+            if m_fix:
+                fix_text = m_fix.group(1).strip()
                 break
         result["raw"] += "\n--- after autofix ---\n" + (fix_text or r_text)
         for task in HEALTHCHECK_TASKS:
