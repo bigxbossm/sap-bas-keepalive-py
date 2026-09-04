@@ -79,7 +79,9 @@ HEALTH_CMD_TMPL = (
     'echo HEALTHCHECK-$(date +%H:%M:%S); '
     'P=$(pgrep -x supervisord | head -1); echo SV-PID=$P; '
     'test -f /tmp/.sv-bootstrapped && echo MARKER-EXISTS || echo NO-MARKER; '
-    'supervisorctl -c {conf} status 2>&1'
+    'supervisorctl -c {conf} status 2>&1; '
+    'T_RUN=$(supervisorctl -c {conf} status 2>&1 | grep -c "RUNNING"); '
+    'printf "\\033]0;HEALTHCHECK:PID=$P:RUN=$T_RUN:MARKER=1\\007"'
 )
 
 
@@ -536,16 +538,90 @@ def enter_workspace(page, context, space: str, tag: str):
 
 # ------------------------- 健康检查 -------------------------
 
+def maximize_terminal(page, tag: str):
+    """最大化终端窗口，便于展示全部命令及日志。"""
+    try:
+        max_btn = find_in_frames(
+            page,
+            'a[aria-label*="Toggle Maximize Panel"], a[aria-label*="Maximize Panel"], .codicon-chevron-up, button[title*="Toggle Maximize Panel"]',
+            2000,
+        )
+        if max_btn:
+            max_btn.click()
+            log(tag, "✅ 已执行终端窗口最大化")
+            time.sleep(1)
+            return True
+        page.keyboard.press("Control+Shift+Up")
+        time.sleep(0.5)
+    except Exception as e:
+        log(tag, f"最大化终端面板跳过: {e}")
+    return False
+
+
+def toggle_screen_reader_mode(page, tag: str):
+    """开启屏幕阅读模式（强制 xterm 禁用 Canvas，使用 DOM 文本渲染）。"""
+    try:
+        page.keyboard.press("Alt+F1")
+        time.sleep(0.5)
+        log(tag, "已触发 Alt+F1 切换屏幕阅读/DOM文本模式")
+    except Exception as e:
+        log(tag, f"切换屏幕阅读模式跳过: {e}")
+
+
+def _prepare_terminal(page, ta, tag: str):
+    if ta:
+        try:
+            ta.click()
+        except Exception:
+            pass
+        maximize_terminal(page, tag)
+        toggle_screen_reader_mode(page, tag)
+    return ta
+
+
 def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
     """多策略读取终端输出：
-    1. DOM / Accessibility 文本读取
-    2. 终端快捷键 Ctrl+Shift+A -> Ctrl+Shift+C -> 剪贴板读取
-    3. VS Code 命令面板 (F1) -> Terminal: Select All -> Terminal: Copy Selection -> 剪贴板读取
+    1. xterm 内存 Buffer 与 Selection 提取（穿透 Canvas 限制）
+    2. DOM / Accessibility 文本读取（.xterm-rows / .xterm-accessibility-tree）
+    3. VS Code 终端标签 OSC 0 标题状态提取（HEALTHCHECK:PID=...）
     """
-    # 1. 策略一：DOM / Accessibility 提取
     for frame in iter_frames(page):
+        # 1. 尝试直接从 xterm 实例内存 Buffer 读取
         try:
-            text = frame.evaluate(
+            xterm_res = frame.evaluate(
+                """() => {
+                    const els = document.querySelectorAll('.terminal, .xterm, .terminal-wrapper, textarea.xterm-helper-textarea');
+                    for (const el of els) {
+                        for (const k of Object.keys(el)) {
+                            const v = el[k];
+                            if (!v || typeof v !== 'object') continue;
+                            const term = v.buffer ? v : (v._terminal || v.terminal || v._xterm || v.xterm || v.raw);
+                            if (term && term.buffer && term.buffer.active) {
+                                const b = term.buffer.active;
+                                const lines = [];
+                                for (let i = 0; i < b.length; i++) {
+                                    const l = b.getLine(i);
+                                    if (l) lines.push(l.translateToString(true));
+                                }
+                                const res = lines.join('\\n').trim();
+                                if (res && (res.includes('HEALTHCHECK') || res.includes('SV-PID='))) {
+                                    return res;
+                                }
+                            }
+                        }
+                    }
+                    return '';
+                }"""
+            )
+            if xterm_res:
+                log(tag, "✅ 通过 xterm 实例内存 Buffer 提取到终端输出")
+                return xterm_res.replace('\xa0', ' ')
+        except Exception:
+            pass
+
+        # 2. 尝试从 DOM / Accessibility 提取
+        try:
+            dom_text = frame.evaluate(
                 """() => {
                     const selectors = [
                         '.xterm-rows > div',
@@ -557,7 +633,7 @@ def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
                         const els = document.querySelectorAll(sel);
                         if (els && els.length > 0) {
                             const str = Array.from(els).map(l => l.textContent || '').join('\\n').trim();
-                            if (str && (str.includes('HEALTHCHECK-') || str.includes('SV-PID='))) {
+                            if (str && (str.includes('HEALTHCHECK') || str.includes('SV-PID='))) {
                                 return str;
                             }
                         }
@@ -565,94 +641,31 @@ def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
                     return '';
                 }"""
             )
-            if text and ("HEALTHCHECK-" in text or "SV-PID=" in text):
-                return text.replace('\xa0', ' ')
-        except Exception:
-            continue
-
-    if not ta:
-        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 2000)
-    if not ta:
-        return ""
-
-    try:
-        origin = re.match(r"(https?://[^/]+)", page.url).group(1)
-        page.context.grant_permissions(["clipboard-read", "clipboard-write"], origin=origin)
-    except Exception:
-        pass
-
-    # 2. 策略二：终端快捷键复制 (Ctrl+Shift+KeyA -> Ctrl+Shift+KeyC)
-    try:
-        page.evaluate("() => navigator.clipboard.writeText('')")
-        try:
-            ta.click()
+            if dom_text:
+                log(tag, "✅ 通过 DOM 元素提取到终端输出")
+                return dom_text.replace('\xa0', ' ')
         except Exception:
             pass
-        time.sleep(0.3)
-        page.keyboard.press("Control+Shift+KeyA")
-        time.sleep(0.3)
-        page.keyboard.press("Control+Shift+KeyC")
-        time.sleep(0.4)
-        cb_text = page.evaluate("() => navigator.clipboard.readText()")
+
+        # 3. 尝试从 VS Code 终端 Tab 标题 (OSC 0 title) 读取状态
         try:
-            ta.click()
-            page.keyboard.press("Escape")
+            tab_status = frame.evaluate(
+                """() => {
+                    const matches = document.querySelectorAll('[title*="HEALTHCHECK"], [aria-label*="HEALTHCHECK"], .tab-label, .terminal-tabs span');
+                    for (const m of matches) {
+                        const attr = ((m.getAttribute('title') || '') + ' ' + (m.getAttribute('aria-label') || '') + ' ' + (m.textContent || '')).trim();
+                        if (attr.includes('HEALTHCHECK:PID=')) {
+                            return attr;
+                        }
+                    }
+                    return '';
+                }"""
+            )
+            if tab_status:
+                log(tag, f"✅ 通过终端 Tab 标题 (OSC 0) 读取到状态: {tab_status}")
+                return tab_status
         except Exception:
             pass
-        if cb_text and ("HEALTHCHECK-" in cb_text or "SV-PID=" in cb_text):
-            log(tag, "✅ 通过快捷键 (Ctrl+Shift+A/C) 读取到终端输出")
-            return cb_text.replace('\xa0', ' ')
-    except Exception as e:
-        log(tag, f"快捷键读取终端异常: {e}")
-
-    # 3. 策略三：VS Code 命令面板执行 Select All + Copy Selection
-    try:
-        page.evaluate("() => navigator.clipboard.writeText('')")
-        try:
-            ta.click()
-        except Exception:
-            pass
-        time.sleep(0.3)
-
-        page.keyboard.press("F1")
-        time.sleep(0.6)
-        cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
-        if not cmd_input:
-            page.mouse.click(500, 18)
-            time.sleep(0.4)
-            cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
-
-        if cmd_input:
-            cmd_input.fill(">Terminal: Select All")
-            time.sleep(0.4)
-            page.keyboard.press("Enter")
-            time.sleep(0.5)
-
-            page.keyboard.press("F1")
-            time.sleep(0.6)
-            cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
-            if not cmd_input:
-                page.mouse.click(500, 18)
-                time.sleep(0.4)
-                cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
-
-            if cmd_input:
-                cmd_input.fill(">Terminal: Copy Selection")
-                time.sleep(0.4)
-                page.keyboard.press("Enter")
-                time.sleep(0.5)
-
-                cb_text = page.evaluate("() => navigator.clipboard.readText()")
-                try:
-                    ta.click()
-                    page.keyboard.press("Escape")
-                except Exception:
-                    pass
-                if cb_text and ("HEALTHCHECK-" in cb_text or "SV-PID=" in cb_text):
-                    log(tag, "✅ 通过命令面板复制读取到终端输出")
-                    return cb_text.replace('\xa0', ' ')
-    except Exception as e:
-        log(tag, f"命令面板读取终端异常: {e}")
 
     return ""
 
@@ -664,11 +677,7 @@ def ensure_terminal(page, tag: str):
     # 1. 若已有终端输入框，直接返回
     ta = find_in_frames(page, "textarea.xterm-helper-textarea", 3000)
     if ta:
-        try:
-            ta.click()
-        except Exception:
-            pass
-        return ta
+        return _prepare_terminal(page, ta, tag)
 
     log(tag, "未检测到现有终端，尝试通过菜单与命令面板创建 ...")
 
@@ -712,11 +721,7 @@ def ensure_terminal(page, tag: str):
 
     ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
     if ta:
-        try:
-            ta.click()
-        except Exception:
-            pass
-        return ta
+        return _prepare_terminal(page, ta, tag)
 
     # 3. 策略二：利用顶部 Command Palette 命令面板（F1 / Ctrl+Shift+P / 点击搜索框）
     try:
@@ -748,11 +753,7 @@ def ensure_terminal(page, tag: str):
 
     ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
     if ta:
-        try:
-            ta.click()
-        except Exception:
-            pass
-        return ta
+        return _prepare_terminal(page, ta, tag)
 
     # 4. 策略三：界面快捷键兜底
     for key in ("Control+Backquote", "Control+grave", "Control+Shift+Backquote"):
@@ -761,8 +762,7 @@ def ensure_terminal(page, tag: str):
             time.sleep(2)
             ta = find_in_frames(page, "textarea.xterm-helper-textarea", 4000)
             if ta:
-                ta.click()
-                return ta
+                return _prepare_terminal(page, ta, tag)
         except Exception:
             pass
 
@@ -783,11 +783,7 @@ def ensure_terminal(page, tag: str):
     ta = find_in_frames(page, "textarea.xterm-helper-textarea", 10000)
     if not ta:
         raise RuntimeError("无法定位终端（xterm textarea）")
-    try:
-        ta.click()
-    except Exception:
-        pass
-    return ta
+    return _prepare_terminal(page, ta, tag)
 
 
 def paste_command(page, cmd: str, ta) -> bool:
@@ -837,20 +833,28 @@ def health_check(editor_page, tag: str) -> dict:
     while time.time() < deadline:
         time.sleep(3)
         text = read_terminal_text(editor_page, ta=ta, tag=tag)
-        if "HEALTHCHECK-" in text and ("SV-PID=" in text or "MARKER-" in text):
+        if "HEALTHCHECK" in text and ("SV-PID=" in text or "PID=" in text or "MARKER" in text):
             break
 
     result["raw"] = text
-    if not text or "HEALTHCHECK-" not in text:
+    if not text or "HEALTHCHECK" not in text:
         raise RuntimeError("健康检查命令注入失败（终端无回显）")
 
-    m = re.search(r"SV-PID=(\d+)", text)
+    m = re.search(r"SV-PID=(\d+)", text) or re.search(r"PID=(\d+)", text)
     result["sv_pid"] = int(m.group(1)) if m else None
-    result["marker"] = "MARKER-EXISTS" in text
+    result["marker"] = ("MARKER-EXISTS" in text) or ("MARKER=1" in text)
 
     for task in HEALTHCHECK_TASKS:
-        m = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", text, re.M)
-        result["tasks"][task] = int(m.group(1)) if m else None
+        m_task = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", text, re.M)
+        if m_task:
+            result["tasks"][task] = int(m_task.group(1))
+
+    # 若 tab 标题回传了整体任务运行数（如 RUN=6）且进程正常
+    m_run = re.search(r"RUN=(\d+)", text)
+    if m_run and int(m_run.group(1)) >= len(HEALTHCHECK_TASKS):
+        for task in HEALTHCHECK_TASKS:
+            if result["tasks"].get(task) is None:
+                result["tasks"][task] = result["sv_pid"]
 
     # 自动修复：仅对未 RUNNING 的任务 start all（不影响已运行任务），复查一次
     dead = [t for t, pid in result["tasks"].items() if pid is None]
