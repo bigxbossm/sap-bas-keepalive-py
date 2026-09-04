@@ -539,12 +539,15 @@ def enter_workspace(page, context, space: str, tag: str):
 def read_terminal_text(page) -> str:
     for frame in iter_frames(page):
         try:
-            rows = frame.locator(".xterm-rows > div")
-            n = rows.count()
-            if n:
-                return "\n".join(
-                    rows.nth(i).inner_text() or "" for i in range(n)
-                )
+            text = frame.evaluate(
+                """() => {
+                    const lines = document.querySelectorAll('.xterm-rows > div');
+                    if (!lines || !lines.length) return '';
+                    return Array.from(lines).map(l => l.textContent || '').join('\\n');
+                }"""
+            )
+            if text and text.strip():
+                return text.replace('\xa0', ' ')
         except Exception:
             continue
     return ""
@@ -683,8 +686,20 @@ def ensure_terminal(page, tag: str):
     return ta
 
 
-def paste_command(page, cmd: str, ta) -> bool:
+def paste_command(page, cmd: str, ta, expect: str = "", timeout_sec: int = 15) -> bool:
     """向终端注入命令：剪贴板粘贴 -> insert_text -> 逐键输入，三层回退。"""
+    def wait_expect():
+        if not expect:
+            time.sleep(2)
+            return True
+        deadline = time.time() + timeout_sec
+        while time.time() < deadline:
+            time.sleep(1)
+            text = read_terminal_text(page)
+            if expect in text:
+                return True
+        return False
+
     # 1) 剪贴板粘贴
     try:
         origin = re.match(r"(https?://[^/]+)", page.url).group(1)
@@ -692,30 +707,33 @@ def paste_command(page, cmd: str, ta) -> bool:
             ["clipboard-read", "clipboard-write"], origin=origin
         )
         page.evaluate("c => navigator.clipboard.writeText(c)", cmd)
+        try:
+            ta.click()
+        except Exception:
+            pass
         page.keyboard.press("Control+v")
         page.keyboard.press("Enter")
-        time.sleep(2)
-        if "HEALTHCHECK-" in read_terminal_text(page):
+        if wait_expect():
             return True
     except Exception:
         pass
+
     # 2) insert_text
     try:
         ta.click()
         page.keyboard.insert_text(cmd)
         page.keyboard.press("Enter")
-        time.sleep(2)
-        if "HEALTHCHECK-" in read_terminal_text(page):
+        if wait_expect():
             return True
     except Exception:
         pass
+
     # 3) 逐键输入（慢速）
     try:
         ta.click()
-        page.keyboard.type(cmd, delay=60)
+        page.keyboard.type(cmd, delay=50)
         page.keyboard.press("Enter")
-        time.sleep(2)
-        return "HEALTHCHECK-" in read_terminal_text(page)
+        return wait_expect()
     except Exception:
         return False
 
@@ -730,11 +748,19 @@ def health_check(editor_page, tag: str) -> dict:
 
     ta = ensure_terminal(editor_page, tag)
     cmd = HEALTH_CMD_TMPL.format(conf=SUPERVISOR_CONF)
-    if not paste_command(editor_page, cmd, ta):
+    if not paste_command(editor_page, cmd, ta, expect="HEALTHCHECK-", timeout_sec=15):
         result["raw"] = read_terminal_text(editor_page)
         raise RuntimeError("健康检查命令注入失败（终端无回显）")
 
-    time.sleep(4)
+    # 轮询等待 supervisord / supervisorctl 输出完整
+    deadline = time.time() + 15
+    while time.time() < deadline:
+        text = read_terminal_text(editor_page)
+        if "SV-PID=" in text:
+            break
+        time.sleep(1)
+
+    time.sleep(2)
     text = read_terminal_text(editor_page)
     result["raw"] = text
 
