@@ -58,7 +58,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           echo "Last run: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > .last-run
-          git add .last-run
+          git add -f .last-run
           git diff --staged --quiet || git commit -m "chore: keepalive $(date -u '+%Y-%m-%d %H:%M')"
           git pull --rebase origin ${{ github.ref_name }}
           git push
