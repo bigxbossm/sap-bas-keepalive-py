@@ -376,8 +376,21 @@ def read_space_status(page) -> str:
     return "UNKNOWN"
 
 
-def start_space_if_stopped(page, tag: str) -> None:
-    status = read_space_status(page)
+def wait_dev_spaces_loaded(page, tag: str, timeout_sec: int = 45) -> str:
+    """等待 BAS 空间控制台加载完毕，返回当前状态。"""
+    log(tag, "⏳ 等待 dev space 列表加载完成 ...")
+    deadline = time.time() + timeout_sec
+    while time.time() < deadline:
+        dismiss_dialog(page, 1500)
+        status = read_space_status(page)
+        if status in ("RUNNING", "STOPPED", "STARTING", "STOPPING"):
+            return status
+        time.sleep(2)
+    return read_space_status(page)
+
+
+def start_space_if_stopped(page, tag: str, initial_status: str = None) -> None:
+    status = initial_status or wait_dev_spaces_loaded(page, tag)
     log(tag, f"📊 dev space 状态: {status}")
 
     if status in ("RUNNING", "STARTING"):
@@ -390,6 +403,7 @@ def start_space_if_stopped(page, tag: str) -> None:
             "#startButton0",
             'button[title*="Start"]',
             'button[aria-label*="Start"]',
+            'a[title*="Start"]',
         ],
         8000,
     )
@@ -779,6 +793,9 @@ def keepalive_one(account: dict, index: int) -> bool:
             login(page, account["bas_url"], account["user"], account["password"])
             dismiss_dialog(page, 10000)
 
+            # 等待空间卡片加载完成，确保截取到完整的空间卡片画面
+            status = wait_dev_spaces_loaded(page, tag)
+
             # 登录成功，截取控制台/工作空间列表
             try:
                 login_screenshot = page.screenshot(full_page=False)
@@ -790,7 +807,7 @@ def keepalive_one(account: dict, index: int) -> bool:
                 log(tag, f"截取登录成功图失败: {e}")
 
             current_step = "启动 dev space"
-            start_space_if_stopped(page, tag)
+            start_space_if_stopped(page, tag, initial_status=status)
 
             current_step = "进入工作区"
             editor_page = enter_workspace(page, context, account["space"], tag)
