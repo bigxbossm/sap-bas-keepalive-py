@@ -536,20 +536,124 @@ def enter_workspace(page, context, space: str, tag: str):
 
 # ------------------------- 健康检查 -------------------------
 
-def read_terminal_text(page) -> str:
+def read_terminal_text(page, ta=None, tag="TERMINAL") -> str:
+    """多策略读取终端输出：
+    1. DOM / Accessibility 文本读取
+    2. 终端快捷键 Ctrl+Shift+A -> Ctrl+Shift+C -> 剪贴板读取
+    3. VS Code 命令面板 (F1) -> Terminal: Select All -> Terminal: Copy Selection -> 剪贴板读取
+    """
+    # 1. 策略一：DOM / Accessibility 提取
     for frame in iter_frames(page):
         try:
             text = frame.evaluate(
                 """() => {
-                    const lines = document.querySelectorAll('.xterm-rows > div');
-                    if (!lines || !lines.length) return '';
-                    return Array.from(lines).map(l => l.textContent || '').join('\\n');
+                    const selectors = [
+                        '.xterm-rows > div',
+                        '.xterm-accessibility-tree div',
+                        '[class*="xterm-accessibility"] div',
+                        'div[role="document"] div'
+                    ];
+                    for (const sel of selectors) {
+                        const els = document.querySelectorAll(sel);
+                        if (els && els.length > 0) {
+                            const str = Array.from(els).map(l => l.textContent || '').join('\\n').trim();
+                            if (str && (str.includes('HEALTHCHECK-') || str.includes('SV-PID='))) {
+                                return str;
+                            }
+                        }
+                    }
+                    return '';
                 }"""
             )
-            if text and text.strip():
+            if text and ("HEALTHCHECK-" in text or "SV-PID=" in text):
                 return text.replace('\xa0', ' ')
         except Exception:
             continue
+
+    if not ta:
+        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 2000)
+    if not ta:
+        return ""
+
+    try:
+        origin = re.match(r"(https?://[^/]+)", page.url).group(1)
+        page.context.grant_permissions(["clipboard-read", "clipboard-write"], origin=origin)
+    except Exception:
+        pass
+
+    # 2. 策略二：终端快捷键复制 (Ctrl+Shift+KeyA -> Ctrl+Shift+KeyC)
+    try:
+        page.evaluate("() => navigator.clipboard.writeText('')")
+        try:
+            ta.click()
+        except Exception:
+            pass
+        time.sleep(0.3)
+        page.keyboard.press("Control+Shift+KeyA")
+        time.sleep(0.3)
+        page.keyboard.press("Control+Shift+KeyC")
+        time.sleep(0.4)
+        cb_text = page.evaluate("() => navigator.clipboard.readText()")
+        try:
+            ta.click()
+            page.keyboard.press("Escape")
+        except Exception:
+            pass
+        if cb_text and ("HEALTHCHECK-" in cb_text or "SV-PID=" in cb_text):
+            log(tag, "✅ 通过快捷键 (Ctrl+Shift+A/C) 读取到终端输出")
+            return cb_text.replace('\xa0', ' ')
+    except Exception as e:
+        log(tag, f"快捷键读取终端异常: {e}")
+
+    # 3. 策略三：VS Code 命令面板执行 Select All + Copy Selection
+    try:
+        page.evaluate("() => navigator.clipboard.writeText('')")
+        try:
+            ta.click()
+        except Exception:
+            pass
+        time.sleep(0.3)
+
+        page.keyboard.press("F1")
+        time.sleep(0.6)
+        cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
+        if not cmd_input:
+            page.mouse.click(500, 18)
+            time.sleep(0.4)
+            cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
+
+        if cmd_input:
+            cmd_input.fill(">Terminal: Select All")
+            time.sleep(0.4)
+            page.keyboard.press("Enter")
+            time.sleep(0.5)
+
+            page.keyboard.press("F1")
+            time.sleep(0.6)
+            cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
+            if not cmd_input:
+                page.mouse.click(500, 18)
+                time.sleep(0.4)
+                cmd_input = find_in_frames(page, "input.quick-input-input", 2000)
+
+            if cmd_input:
+                cmd_input.fill(">Terminal: Copy Selection")
+                time.sleep(0.4)
+                page.keyboard.press("Enter")
+                time.sleep(0.5)
+
+                cb_text = page.evaluate("() => navigator.clipboard.readText()")
+                try:
+                    ta.click()
+                    page.keyboard.press("Escape")
+                except Exception:
+                    pass
+                if cb_text and ("HEALTHCHECK-" in cb_text or "SV-PID=" in cb_text):
+                    log(tag, "✅ 通过命令面板复制读取到终端输出")
+                    return cb_text.replace('\xa0', ' ')
+    except Exception as e:
+        log(tag, f"命令面板读取终端异常: {e}")
+
     return ""
 
 
@@ -686,21 +790,8 @@ def ensure_terminal(page, tag: str):
     return ta
 
 
-def paste_command(page, cmd: str, ta, expect: str = "", timeout_sec: int = 15) -> bool:
-    """向终端注入命令：剪贴板粘贴 -> insert_text -> 逐键输入，三层回退。"""
-    def wait_expect():
-        if not expect:
-            time.sleep(2)
-            return True
-        deadline = time.time() + timeout_sec
-        while time.time() < deadline:
-            time.sleep(1)
-            text = read_terminal_text(page)
-            if expect in text:
-                return True
-        return False
-
-    # 1) 剪贴板粘贴
+def paste_command(page, cmd: str, ta) -> bool:
+    """向终端注入命令并回车。"""
     try:
         origin = re.match(r"(https?://[^/]+)", page.url).group(1)
         page.context.grant_permissions(
@@ -713,29 +804,16 @@ def paste_command(page, cmd: str, ta, expect: str = "", timeout_sec: int = 15) -
             pass
         page.keyboard.press("Control+v")
         page.keyboard.press("Enter")
-        if wait_expect():
+        return True
+    except Exception as e:
+        log("TERMINAL", f"剪贴板粘贴异常: {e}")
+        try:
+            ta.click()
+            page.keyboard.insert_text(cmd)
+            page.keyboard.press("Enter")
             return True
-    except Exception:
-        pass
-
-    # 2) insert_text
-    try:
-        ta.click()
-        page.keyboard.insert_text(cmd)
-        page.keyboard.press("Enter")
-        if wait_expect():
-            return True
-    except Exception:
-        pass
-
-    # 3) 逐键输入（慢速）
-    try:
-        ta.click()
-        page.keyboard.type(cmd, delay=50)
-        page.keyboard.press("Enter")
-        return wait_expect()
-    except Exception:
-        return False
+        except Exception:
+            return False
 
 
 def health_check(editor_page, tag: str) -> dict:
@@ -748,21 +826,23 @@ def health_check(editor_page, tag: str) -> dict:
 
     ta = ensure_terminal(editor_page, tag)
     cmd = HEALTH_CMD_TMPL.format(conf=SUPERVISOR_CONF)
-    if not paste_command(editor_page, cmd, ta, expect="HEALTHCHECK-", timeout_sec=15):
-        result["raw"] = read_terminal_text(editor_page)
-        raise RuntimeError("健康检查命令注入失败（终端无回显）")
+    log(tag, "注入健康检查命令 ...")
+    if not paste_command(editor_page, cmd, ta):
+        raise RuntimeError("终端命令注入失败")
 
-    # 轮询等待 supervisord / supervisorctl 输出完整
-    deadline = time.time() + 15
+    # 轮询等待健康检查命令在 bash 中执行并生成完整回显
+    log(tag, "⏳ 等待健康检查命令输出 ...")
+    text = ""
+    deadline = time.time() + 25
     while time.time() < deadline:
-        text = read_terminal_text(editor_page)
-        if "SV-PID=" in text:
+        time.sleep(3)
+        text = read_terminal_text(editor_page, ta=ta, tag=tag)
+        if "HEALTHCHECK-" in text and ("SV-PID=" in text or "MARKER-" in text):
             break
-        time.sleep(1)
 
-    time.sleep(2)
-    text = read_terminal_text(editor_page)
     result["raw"] = text
+    if not text or "HEALTHCHECK-" not in text:
+        raise RuntimeError("健康检查命令注入失败（终端无回显）")
 
     m = re.search(r"SV-PID=(\d+)", text)
     result["sv_pid"] = int(m.group(1)) if m else None
@@ -782,7 +862,7 @@ def health_check(editor_page, tag: str) -> dict:
         )
         paste_command(editor_page, fix_cmd, ta)
         time.sleep(8)
-        text = read_terminal_text(editor_page)
+        text = read_terminal_text(editor_page, ta=ta, tag=tag)
         result["raw"] += "\n--- after autofix ---\n" + text
         for task in HEALTHCHECK_TASKS:
             m = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", text, re.M)
