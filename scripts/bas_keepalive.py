@@ -246,14 +246,29 @@ def click_if_found(page, selectors, timeout_ms: int = 3000) -> bool:
 # ------------------------ 通用弹窗处理 ------------------------
 
 def dismiss_dialog(page, timeout_ms: int = 8000) -> bool:
-    """处理 BAS 首次登录的隐私声明等弹窗：勾选复选框后点 OK/Accept。"""
-    btn = find_in_frames(
-        page,
-        'button:has-text("OK"), button:has-text("Accept"), button:has-text("Agree")',
-        timeout_ms,
-    )
-    if not btn:
-        return False
+    """处理 BAS 首次登录及 IDE 内各种弹窗（隐私声明、活动跟踪等）。"""
+    selectors = [
+        '.monaco-dialog-box .monaco-button:has-text("OK")',
+        '.monaco-dialog-box [role="button"]:has-text("OK")',
+        '.monaco-dialog-box a:has-text("OK")',
+        'a.monaco-button:has-text("OK")',
+        '[role="button"]:has-text("OK")',
+        'button:has-text("OK")',
+        'button:has-text("Accept")',
+        'button:has-text("Agree")',
+    ]
+    for frame in iter_frames(page):
+        try:
+            for sel in selectors:
+                cand = frame.locator(sel).first
+                if cand.count() > 0 and cand.is_visible():
+                    cand.click()
+                    time.sleep(1)
+                    log("DIALOG", f"已点击弹窗确认按钮 ({sel})")
+                    return True
+        except Exception:
+            continue
+
     # 在所有 frame 内勾选可见复选框
     for frame in iter_frames(page):
         try:
@@ -265,12 +280,19 @@ def dismiss_dialog(page, timeout_ms: int = 8000) -> bool:
                     time.sleep(0.5)
         except Exception:
             continue
-    try:
-        btn.click()
-        time.sleep(1.5)
-        return True
-    except Exception:
-        return False
+
+    # 如果检测到模态遮罩，尝试 Escape 键关闭
+    for frame in iter_frames(page):
+        try:
+            if frame.locator(".monaco-dialog-modal-block, .monaco-dialog-box").count() > 0:
+                page.keyboard.press("Escape")
+                time.sleep(1)
+                log("DIALOG", "已按 Escape 尝试关闭弹窗遮罩")
+                return True
+        except Exception:
+            continue
+
+    return False
 
 
 def dismiss_ide_notifications(page) -> None:
@@ -529,6 +551,9 @@ def read_terminal_text(page) -> str:
 
 
 def ensure_terminal(page, tag: str):
+    dismiss_dialog(page, 2000)
+    dismiss_ide_notifications(page)
+
     # 1. 若已有终端输入框，直接返回
     ta = find_in_frames(page, "textarea.xterm-helper-textarea", 3000)
     if ta:
