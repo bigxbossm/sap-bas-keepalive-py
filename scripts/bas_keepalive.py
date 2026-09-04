@@ -1,1 +1,601 @@
-IyEvdXNyL2Jpbi9lbnYgcHl0aG9uMwojIC0qLSBjb2Rpbmc6IHV0Zi04IC0qLQoiIiIKU0FQIEJBUyBLZWVwIEFsaXZlICsg5YGl5bq35qOA5p+lCj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0K6J6N5ZCI5Lik5Lu957uP6L+H5a6e5oiY6aqM6K+B55qE5rWB56iL77yaCiAgMS4g55m75b2V5L+d5rS777yI5Y+C6ICDIHphb2Zlbmd5dWUvc2FwLWJhcy1rZWVwYWxpdmUg55qEIEpTIOeJiOmAu+i+ke+8iQogICAgIOeZu+W9lSBCVFAgLT4g5aSE55CG6ZqQ56eB5by556qXIC0+IOajgOafpSBkZXYgc3BhY2Ug54q25oCBCiAgICAgLT4g6IulIFNUT1BQRUQg5YiZ5ZCv5Yqo5bm2562J5b6FIFJVTk5JTkcgLT4g6L+b5YWl57yW6L6R5Zmo5YGc55WZCiAgMi4g5bqU55So5YGl5bq35qOA5p+l77yI5p2l6Ieq5bey6aqM6K+B55qEIGJhc19kZXZzcGFjZV9yZXN0YXJ0X3Rlc3QucHnvvIkKICAgICDov5vlhaUgSURFIOWQjuWcqOe7iOerr+aJp+ihjCBzdXBlcnZpc29yZCDnirbmgIHmn6Xor6LvvIwKICAgICDpgJDkuIDmlq3oqIDmnI3liqEgUlVOTklOR++8jOWPr+mAieiHquWKqOS/ruWkje+8iHN1cGVydmlzb3JjdGwgc3RhcnQgYWxs77yJCgrnjq/looPlj5jph4/vvIjlnYflj6/pgJrov4cgR2l0SHViIFNlY3JldHMgLyB3b3JrZmxvdyBlbnYg6YWN572u77yJ77yaCiAgQkFTX1VSTCAgICAgICAgICAgIOW/heWhq++8jEJBUyDlnLDlnYDvvIzlpJrotKblj7fnlKggJzsnIOWIhumalAogIEJUUF9VU0VSICAgICAgICAgICDlv4XloavvvIznmbvlvZXpgq7nrrHvvIzlpJrotKblj7fnlKggJzsnIOWIhumalAogIEJUUF9QQVNTV09SRCAgICAgICDlv4XloavvvIznmbvlvZXlr4bnoIHvvIzlpJrotKblj7fnlKggJzsnIOWIhumalAogIEJBU19TUEFDRV9OQU1FICAgICDpgInloavvvIxkZXYgc3BhY2Ug5ZCN56ew77yM5aSa6LSm5Y+355SoICc7JyDliIbpmpQKICBIRUFMVEhDSEVDS19FTkFCTEVEIOm7mOiupCB0cnVl77yM5piv5ZCm5omn6KGM57uI56uv5YGl5bq35qOA5p+lCiAgSEVBTFRIQ0hFQ0tfVEFTS1MgIOm7mOiupCA2IOS4quacjeWKoeWQje+8jCc7JyDliIbpmpTvvJvorr7kuLrnqbrot7Pov4fpgJDkuIDmlq3oqIAKICBTVVBFUlZJU09SX0NPTkYgICAg6buY6K6kIH4vLmNvbmZpZy9zdXBlcnZpc29yL3N1cGVydmlzb3JkLmNvbmYKICBBVVRPX0ZJWCAgICAgICAgICAg6buY6K6kIHRydWXvvIzlj5HnjrDku7vliqHmnKogUlVOTklORyDml7boh6rliqggc3RhcnQgYWxsIOW5tuWkjeafpQogIFNUQVlfU0VDT05EUyAgICAgICDpu5jorqQgNjDvvIznvJbovpHlmajlhoXlgZznlZnml7bplb/vvIjorrDlvZXmtLvot4PvvIkKICBCT09UU1RSQVBfV0FJVF9TRUMg6buY6K6kIDQw77yM562J5b6FIC5iYXNocmMg6ZKp5a2Q5byV5a+8IHN1cGVydmlzb3JkCiAgU1RBUlRfVElNRU9VVF9TRUMgIOm7mOiupCAzMDDvvIznrYnlvoUgZGV2IHNwYWNlIOWPmCBSVU5OSU5HIOeahOi2heaXtgogIEVESVRPUl9USU1FT1VUX1NFQyDpu5jorqQgMTgw77yM562J5b6F57yW6L6R5Zmo5Yqg6L2955qE6LaF5pe2CiAgSEVBRExFU1MgICAgICAgICAgIOm7mOiupCB0cnVl77yb5pys5Zyw6LCD6K+V5Y+v6K6+IGZhbHNlCiAgRkFJTF9PTl9VTkhFQUxUSFkgIOm7mOiupCB0cnVl77yM5YGl5bq35qOA5p+l5aSx6LSl5pe26L+b56iL6YCA5Ye656CB6Z2eIDDvvIhBY3Rpb25zIOagh+e6ou+8iQoiIiIKCmltcG9ydCBvcwppbXBvcnQgcmUKaW1wb3J0IHN5cwppbXBvcnQgdGltZQoKZnJvbSBwbGF5d3JpZ2h0LnN5bmNfYXBpIGltcG9ydCBzeW5jX3BsYXl3cmlnaHQsIFRpbWVvdXRFcnJvciBhcyBQV1RpbWVvdXQKCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSDphY3nva4gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKZGVmIGVudl9ib29sKG5hbWU6IHN0ciwgZGVmYXVsdDogYm9vbCkgLT4gYm9vbDoKICAgIHYgPSBvcy5lbnZpcm9uLmdldChuYW1lKQogICAgaWYgdiBpcyBOb25lOgogICAgICAgIHJldHVybiBkZWZhdWx0CiAgICByZXR1cm4gdi5zdHJpcCgpLmxvd2VyKCkgaW4gKCIxIiwgInRydWUiLCAieWVzIiwgInkiLCAib24iKQoKCmRlZiBlbnZfaW50KG5hbWU6IHN0ciwgZGVmYXVsdDogaW50KSAtPiBpbnQ6CiAgICB0cnk6CiAgICAgICAgcmV0dXJuIGludChvcy5lbnZpcm9uLmdldChuYW1lLCAiIikuc3RyaXAoKSBvciBkZWZhdWx0KQogICAgZXhjZXB0IFZhbHVlRXJyb3I6CiAgICAgICAgcmV0dXJuIGRlZmF1bHQKCgpIRUFETEVTUyA9IGVudl9ib29sKCJIRUFETEVTUyIsIFRydWUpCkhFQUxUSENIRUNLX0VOQUJMRUQgPSBlbnZfYm9vbCgiSEVBTFRIQ0hFQ0tfRU5BQkxFRCIsIFRydWUpCkFVVE9fRklYID0gZW52X2Jvb2woIkFVVE9fRklYIiwgVHJ1ZSkKRkFJTF9PTl9VTkhFQUxUSFkgPSBlbnZfYm9vbCgiRkFJTF9PTl9VTkhFQUxUSFkiLCBUcnVlKQoKU1RBWV9TRUNPTkRTID0gZW52X2ludCgiU1RBWV9TRUNPTkRTIiwgNjApCkJPT1RTVFJBUF9XQUlUX1NFQyA9IGVudl9pbnQoIkJPT1RTVFJBUF9XQUlUX1NFQyIsIDQwKQpTVEFSVF9USU1FT1VUX1NFQyA9IGVudl9pbnQoIlNUQVJUX1RJTUVPVVRfU0VDIiwgMzAwKQpFRElUT1JfVElNRU9VVF9TRUMgPSBlbnZfaW50KCJFRElUT1JfVElNRU9VVF9TRUMiLCAxODApCgpTVVBFUlZJU09SX0NPTkYgPSBvcy5lbnZpcm9uLmdldCgKICAgICJTVVBFUlZJU09SX0NPTkYiLCAifi8uY29uZmlnL3N1cGVydmlzb3Ivc3VwZXJ2aXNvcmQuY29uZiIKKQpERUZBVUxUX1RBU0tTID0gImNsb3VkZmxhcmVkO2tvbWFyaS1hZ2VudDtvcGVuY29kZS10ZWxlZ3JhbS1ib3Q7dHR5ZDt2c2NvZGUtdGVybWluYWwtdGFzazt4cmF5IgpIRUFMVEhDSEVDS19UQVNLUyA9IFsKICAgIHQuc3RyaXAoKSBmb3IgdCBpbiBvcy5lbnZpcm9uLmdldCgiSEVBTFRIQ0hFQ0tfVEFTS1MiLCBERUZBVUxUX1RBU0tTKS5zcGxpdCgiOyIpCiAgICBpZiB0LnN0cmlwKCkKXQoKTE9HSU5fVElNRU9VVF9NUyA9IDYwXzAwMApIRUFMVEhfQ01EX1RNUEwgPSAoCiAgICAnZWNobyBIRUFMVEhDSEVDSy0kKGRhdGUgKyVIOiVNOiVTKTsgJwogICAgJ1A9JChwZ3JlcCAteCBzdXBlcnZpc29yZCB8IGhlYWQgLTEpOyBlY2hvIFNWLVBJRD0kUDsgJwogICAgJ3Rlc3QgLWYgL3RtcC8uc3YtYm9vdHN0cmFwcGVkICYmIGVjaG8gTUFSS0VSLUVYSVNUUyB8fCBlY2hvIE5PLU1BUktFUjsgJwogICAgJ3N1cGVydmlzb3JjdGwgLWMge2NvbmZ9IHN0YXR1cyAyPiYxJwopCgoKZGVmIHBhcnNlX2FjY291bnRzKCk6CiAgICB1cmxzID0gW3Muc3RyaXAoKSBmb3IgcyBpbiBvcy5lbnZpcm9uLmdldCgiQkFTX1VSTCIsICIiKS5zcGxpdCgiOyIpIGlmIHMuc3RyaXAoKV0KICAgIHVzZXJzID0gW3Muc3RyaXAoKSBmb3IgcyBpbiBvcy5lbnZpcm9uLmdldCgiQlRQX1VTRVIiLCAiIikuc3BsaXQoIjsiKSBpZiBzLnN0cmlwKCldCiAgICBwd2RzID0gW3Muc3RyaXAoKSBmb3IgcyBpbiBvcy5lbnZpcm9uLmdldCgiQlRQX1BBU1NXT1JEIiwgIiIpLnNwbGl0KCI7IikgaWYgcy5zdHJpcCgpXQogICAgc3BhY2VzID0gW3Muc3RyaXAoKSBmb3IgcyBpbiBvcy5lbnZpcm9uLmdldCgiQkFTX1NQQUNFX05BTUUiLCAiIikuc3BsaXQoIjsiKSBpZiBzLnN0cmlwKCldCiAgICBpZiBub3QgdXJsczoKICAgICAgICBsb2coIk1BSU4iLCAi4p2MIEJBU19VUkwg5pyq6YWN572uIikKICAgICAgICBzeXMuZXhpdCgxKQogICAgcmV0dXJuIFsKICAgICAgICB7CiAgICAgICAgICAgICJiYXNfdXJsIjogdXJsc1tpXSwKICAgICAgICAgICAgInVzZXIiOiB1c2Vyc1tpXSBpZiBpIDwgbGVuKHVzZXJzKSBlbHNlICh1c2Vyc1swXSBpZiB1c2VycyBlbHNlICIiKSwKICAgICAgICAgICAgInBhc3N3b3JkIjogcHdkc1tpXSBpZiBpIDwgbGVuKHB3ZHMpIGVsc2UgKHB3ZHNbMF0gaWYgcHdkcyBlbHNlICIiKSwKICAgICAgICAgICAgInNwYWNlIjogc3BhY2VzW2ldIGlmIGkgPCBsZW4oc3BhY2VzKSBlbHNlIChzcGFjZXNbMF0gaWYgc3BhY2VzIGVsc2UgIiIpLAogICAgICAgIH0KICAgICAgICBmb3IgaSBpbiByYW5nZShsZW4odXJscykpCiAgICBdCgoKIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIOaXpeW/lyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgpkZWYgbG9nKHRhZzogc3RyLCBtc2c6IHN0cikgLT4gTm9uZToKICAgIHByaW50KGYiW3t0aW1lLnN0cmZ0aW1lKCclSDolTTolUycpfV0gW3t0YWd9XSB7bXNnfSIsIGZsdXNoPVRydWUpCgoKZGVmIGdoX3N1bW1hcnkodGV4dDogc3RyKSAtPiBOb25lOgogICAgIiIi5YaZ5YWlIEdpdEh1YiBBY3Rpb25zIEpvYiBTdW1tYXJ577yI5pys5Zyw6L+Q6KGM5pe25b+955Wl77yJ44CCIiIiCiAgICBwYXRoID0gb3MuZW52aXJvbi5nZXQoIkdJVEhVQl9TVEVQX1NVTU1BUlkiKQogICAgaWYgcGF0aDoKICAgICAgICB0cnk6CiAgICAgICAgICAgIHdpdGggb3BlbihwYXRoLCAiYSIsIGVuY29kaW5nPSJ1dGYtOCIpIGFzIGY6CiAgICAgICAgICAgICAgICBmLndyaXRlKHRleHQgKyAiXG4iKQogICAgICAgIGV4Y2VwdCBPU0Vycm9yOgogICAgICAgICAgICBwYXNzCgoKIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0g6aG16Z2i5p+l5om+6L6F5YqpIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKZGVmIGl0ZXJfZnJhbWVzKHBhZ2UpOgogICAgIiIi5Li76aG16Z2iICsg5omA5pyJIGlmcmFtZe+8iEJBUyDlpKfph4/lhoXlrrnltYzlnKggaWZyYW1lIOS4re+8ieOAgiIiIgogICAgdHJ5OgogICAgICAgIHJldHVybiBsaXN0KHBhZ2UuZnJhbWVzKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICByZXR1cm4gW3BhZ2UubWFpbl9mcmFtZV0KCgpkZWYgZmluZF9pbl9mcmFtZXMocGFnZSwgc2VsZWN0b3I6IHN0ciwgdGltZW91dF9tczogaW50ID0gMzAwMCk6CiAgICAiIiLlnKjmiYDmnIkgZnJhbWUg5Lit5p+l5om+56ys5LiA5Liq5Yy56YWN55qEIGxvY2F0b3LvvIzotoXml7bov5Tlm54gTm9uZeOAgiIiIgogICAgZGVhZGxpbmUgPSB0aW1lLnRpbWUoKSArIHRpbWVvdXRfbXMgLyAxMDAwCiAgICB3aGlsZSB0aW1lLnRpbWUoKSA8IGRlYWRsaW5lOgogICAgICAgIGZvciBmcmFtZSBpbiBpdGVyX2ZyYW1lcyhwYWdlKToKICAgICAgICAgICAgdHJ5OgogICAgICAgICAgICAgICAgbG9jID0gZnJhbWUubG9jYXRvcihzZWxlY3RvcikuZmlyc3QKICAgICAgICAgICAgICAgIGlmIGxvYy5jb3VudCgpID4gMCBhbmQgbG9jLmlzX3Zpc2libGUoKToKICAgICAgICAgICAgICAgICAgICByZXR1cm4gbG9jCiAgICAgICAgICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgICAgICAgICBjb250aW51ZQogICAgICAgIHRpbWUuc2xlZXAoMC41KQogICAgcmV0dXJuIE5vbmUKCgpkZWYgY2xpY2tfaWZfZm91bmQocGFnZSwgc2VsZWN0b3JzLCB0aW1lb3V0X21zOiBpbnQgPSAzMDAwKSAtPiBib29sOgogICAgIiIi5L6d5qyh5bCd6K+VIHNlbGVjdG9yc++8jOaJvuWIsOWPr+ingeeahOWwseeCueWHu+OAgiIiIgogICAgbG9jID0gZmluZF9pbl9mcmFtZXMocGFnZSwgIiwiLmpvaW4oc2VsZWN0b3JzKSwgdGltZW91dF9tcykgXAogICAgICAgIGlmIGFsbChpc2luc3RhbmNlKHMsIHN0cikgZm9yIHMgaW4gc2VsZWN0b3JzKSBlbHNlIE5vbmUKICAgIGlmIGxvYzoKICAgICAgICB0cnk6CiAgICAgICAgICAgIGxvYy5jbGljayh0aW1lb3V0PTMwMDApCiAgICAgICAgICAgIHJldHVybiBUcnVlCiAgICAgICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICAgICAgcGFzcwogICAgZm9yIHNlbCBpbiBzZWxlY3RvcnM6ICAjIOmAkOS4qumHjeivle+8iOe7hOWQiOmAieaLqeWZqOWPr+iDveWboOWNleW4p+S4jeWPr+ingeiAjOa8j+ajgO+8iQogICAgICAgIGwyID0gZmluZF9pbl9mcmFtZXMocGFnZSwgc2VsLCAxNTAwKQogICAgICAgIGlmIGwyOgogICAgICAgICAgICB0cnk6CiAgICAgICAgICAgICAgICBsMi5jbGljayh0aW1lb3V0PTMwMDApCiAgICAgICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgICAgICAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgICAgICAgICAgY29udGludWUKICAgIHJldHVybiBGYWxzZQoKCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIOmAmueUqOW8ueeql+WkhOeQhiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCmRlZiBkaXNtaXNzX2RpYWxvZyhwYWdlLCB0aW1lb3V0X21zOiBpbnQgPSA4MDAwKSAtPiBib29sOgogICAgIiIi5aSE55CGIEJBUyDpppbmrKHnmbvlvZXnmoTpmpDnp4Hlo7DmmI7nrYnlvLnnqpfvvJrli77pgInlpI3pgInmoYblkI7ngrkgT0svQWNjZXB044CCIiIiCiAgICBidG4gPSBmaW5kX2luX2ZyYW1lcygKICAgICAgICBwYWdlLAogICAgICAgICdidXR0b246aGFzLXRleHQoIk9LIiksIGJ1dHRvbjpoYXMtdGV4dCgiQWNjZXB0IiksIGJ1dHRvbjpoYXMtdGV4dCgiQWdyZWUiKScsCiAgICAgICAgdGltZW91dF9tcywKICAgICkKICAgIGlmIG5vdCBidG46CiAgICAgICAgcmV0dXJuIEZhbHNlCiAgICAjIOWcqOaJgOaciSBmcmFtZSDlhoXli77pgInlj6/op4HlpI3pgInmoYYKICAgIGZvciBmcmFtZSBpbiBpdGVyX2ZyYW1lcyhwYWdlKToKICAgICAgICB0cnk6CiAgICAgICAgICAgIGNicyA9IGZyYW1lLmxvY2F0b3IoJ2lucHV0W3R5cGU9ImNoZWNrYm94Il0nKQogICAgICAgICAgICBmb3IgaSBpbiByYW5nZShtaW4oY2JzLmNvdW50KCksIDMpKToKICAgICAgICAgICAgICAgIGMgPSBjYnMubnRoKGkpCiAgICAgICAgICAgICAgICBpZiBjLmlzX3Zpc2libGUoKSBhbmQgbm90IGMuaXNfY2hlY2tlZCgpOgogICAgICAgICAgICAgICAgICAgIGMuY2xpY2soKQogICAgICAgICAgICAgICAgICAgIHRpbWUuc2xlZXAoMC41KQogICAgICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgICAgIGNvbnRpbnVlCiAgICB0cnk6CiAgICAgICAgYnRuLmNsaWNrKCkKICAgICAgICB0aW1lLnNsZWVwKDEuNSkKICAgICAgICByZXR1cm4gVHJ1ZQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICByZXR1cm4gRmFsc2UKCgpkZWYgZGlzbWlzc19pZGVfbm90aWZpY2F0aW9ucyhwYWdlKSAtPiBOb25lOgogICAgIiIi5aSE55CGIElERSDlhoXpgJrnn6XvvIjmnaXoh6rlrp7miJjorrDlvZXvvJoKICAgIC0g5oG25oSP5paH5Lu26K2m5ZGKIC0+IOeCuSBJZ25vcmXvvIjnu53kuI3liKDpmaTnlKjmiLfmlofku7bvvIkKICAgIC0g5pmu6YCa6YCa55+lICAgICAtPiBDbGVhciBOb3RpZmljYXRpb24KICAgICIiIgogICAgZm9yIGZyYW1lIGluIGl0ZXJfZnJhbWVzKHBhZ2UpOgogICAgICAgIHRyeToKICAgICAgICAgICAgZm9yIGJ0biBpbiBmcmFtZS5nZXRfYnlfcm9sZSgKICAgICAgICAgICAgICAgICJidXR0b24iLCBuYW1lPXJlLmNvbXBpbGUociJeXHMqSWdub3JlXHMqJCIsIHJlLkkpCiAgICAgICAgICAgICkuYWxsKCk6CiAgICAgICAgICAgICAgICBpZiBidG4uaXNfdmlzaWJsZSgpOgogICAgICAgICAgICAgICAgICAgIGJ0bi5jbGljaygpCiAgICAgICAgICAgICAgICAgICAgbG9nKCJOT1RJRiIsICLlt7Llv73nlaXmgbbmhI/mlofku7borablkYrvvIjkv53nlZnmlofku7bvvIkiKQogICAgICAgICAgICAgICAgICAgIHRpbWUuc2xlZXAoMC44KQogICAgICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgICAgIGNvbnRpbnVlCiAgICAgICAgdHJ5OgogICAgICAgICAgICBmb3IgYnRuIGluIGZyYW1lLmxvY2F0b3IoImJ1dHRvblt0aXRsZSo9J0NsZWFyIE5vdGlmaWNhdGlvbiddIikuYWxsKCk6CiAgICAgICAgICAgICAgICBpZiBidG4uaXNfdmlzaWJsZSgpOgogICAgICAgICAgICAgICAgICAgIGJ0bi5jbGljaygpCiAgICAgICAgICAgICAgICAgICAgdGltZS5zbGVlcCgwLjUpCiAgICAgICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICAgICAgY29udGludWUKCgojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSDnmbvlvZUgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgpVU0VSX0ZJRUxEID0gJ2lucHV0W3R5cGU9ImVtYWlsIl0sIGlucHV0W25hbWU9ImxvZ29udWlkZmllbGQiXSwgI2pfdXNlcm5hbWUnClBXRF9GSUVMRCA9ICdpbnB1dFt0eXBlPSJwYXNzd29yZCJdLCAjal9wYXNzd29yZCcKU1VCTUlUX0ZJRUxEID0gKCdidXR0b25bdHlwZT0ic3VibWl0Il0sICNsb2dPbkZvcm1TdWJtaXQsICcKICAgICAgICAgICAgICAgICdidXR0b246aGFzLXRleHQoIlNpZ24gSW4iKSwgYnV0dG9uOmhhcy10ZXh0KCJMb2cgT24iKScpCgoKZGVmIGxvZ2luKHBhZ2UsIGJhc191cmw6IHN0ciwgdXNlcjogc3RyLCBwYXNzd29yZDogc3RyKSAtPiBOb25lOgogICAgbG9nKCJMT0dJTiIsIGYi5omT5byAIHtiYXNfdXJsfSIpCiAgICBwYWdlLmdvdG8oYmFzX3VybCwgd2FpdF91bnRpbD0iZG9tY29udGVudGxvYWRlZCIsIHRpbWVvdXQ9TE9HSU5fVElNRU9VVF9NUykKCiAgICAjIOW3suacieS8muivneWImei3s+i/h+eZu+W9leihqOWNlQogICAgaWYgZmluZF9pbl9mcmFtZXMocGFnZSwgVVNFUl9GSUVMRCwgODAwMCkgaXMgTm9uZToKICAgICAgICB0cnk6CiAgICAgICAgICAgIHBhZ2Uud2FpdF9mb3JfdXJsKHJlLmNvbXBpbGUociJhcHBsaWNhdGlvbnN0dWRpb1wuY2xvdWRcLnNhcCIpLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICB0aW1lb3V0PTE1MDAwKQogICAgICAgICAgICBsb2coIkxPR0lOIiwgIuKchSDlt7LlrZjlnKjkvJror53vvIzlhY3nmbvlvZUiKQogICAgICAgICAgICByZXR1cm4KICAgICAgICBleGNlcHQgUFdUaW1lb3V0OgogICAgICAgICAgICBwYXNzCgogICAgbG9nKCJMT0dJTiIsICLwn5OnIOi+k+WFpemCrueusS4uLiIpCiAgICBmaWVsZCA9IGZpbmRfaW5fZnJhbWVzKHBhZ2UsIFVTRVJfRklFTEQsIDMwMDAwKQogICAgaWYgbm90IGZpZWxkOgogICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigi5pyq5om+5Yiw55m75b2V55So5oi35ZCN6L6T5YWl5qGG77yI6aG16Z2i57uT5p6E5Y+v6IO95bey5Y+Y5YyW77yJIikKICAgIGZpZWxkLmZpbGwodXNlcikKICAgIHRpbWUuc2xlZXAoMSkKICAgICMg5paw54mIIEJUUCDnmbvlvZXvvJrpgq7nrrEgLT4gQ29udGludWUgLT4g5a+G56CB77yb57uP5YW46KGo5Y2V77ya5ZCM6aG15Y+M6L6T5YWl5qGGCiAgICBjbGlja19pZl9mb3VuZCgKICAgICAgICBwYWdlLAogICAgICAgIFsnYnV0dG9uOmhhcy10ZXh0KCJDb250aW51ZSIpJywgJ2J1dHRvbjpoYXMtdGV4dCgiTmV4dCIpJywgIiNjb250aW51ZSJdLAogICAgICAgIDMwMDAsCiAgICApCgogICAgbG9nKCJMT0dJTiIsICLwn5SRIOi+k+WFpeWvhueggS4uLiIpCiAgICBwd2QgPSBmaW5kX2luX2ZyYW1lcyhwYWdlLCBQV0RfRklFTEQsIDIwMDAwKQogICAgaWYgbm90IHB3ZDoKICAgICAgICByYWlzZSBSdW50aW1lRXJyb3IoIuacquaJvuWIsOWvhueggei+k+WFpeahhiIpCiAgICBwd2QuZmlsbChwYXNzd29yZCkKICAgIHRpbWUuc2xlZXAoMC41KQoKICAgIGlmIG5vdCBjbGlja19pZl9mb3VuZChwYWdlLCBTVUJNSVRfRklFTEQuc3BsaXQoIiwgIiksIDUwMDApOgogICAgICAgIHBhZ2Uua2V5Ym9hcmQucHJlc3MoIkVudGVyIikKICAgIGxvZygiTE9HSU4iLCAi562J5b6F6Lez6L2sIEJBUyAuLi4iKQogICAgcGFnZS53YWl0X2Zvcl91cmwocmUuY29tcGlsZShyImFwcGxpY2F0aW9uc3R1ZGlvXC5jbG91ZFwuc2FwIiksCiAgICAgICAgICAgICAgICAgICAgICB0aW1lb3V0PUxPR0lOX1RJTUVPVVRfTVMpCiAgICBsb2coIkxPR0lOIiwgIuKchSDnmbvlvZXmiJDlip8iKQoKCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gZGV2IHNwYWNl54q25oCB566h55CGIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgpTVEFUVVNfUkUgPSByZS5jb21waWxlKHIiXihSVU5OSU5HfFNUT1BQRUR8U1RBUlRJTkd8U1RPUFBJTkkpJCIsIHJlLkkpCgpkZWYgcmVhZF9zcGFjZV9zdGF0dXMocGFnZSkgLT4gc3RyOgogICAgIiIi6K+75Y+WIGRldiBzcGFjZSDnirbmgIHvvJrkvJjlhYjnirbmgIHmlofmnKzvvIzlm57pgIDliLDlj4LogIPpobnnm67nmoQgQ1NTIOexu+mAieaLqeWZqOOAgiIiIgogICAgZm9yIGZyYW1lIGluIGl0ZXJfZnJhbWVzKHBhZ2UpOgogICAgICAgIHRyeToKICAgICAgICAgICAgZWxzID0gZnJhbWUuZ2V0X2J5X3RleHQoU1RBVFVTX1JFKQogICAgICAgICAgICBmb3IgZWwgaW4gZWxzLmFsbCgpOgogICAgICAgICAgICAgICAgdCA9IChlbC5pbm5lcl90ZXh0KCkgb3IgIiIpLnN0cmlwKCkudXBwZXIoKQogICAgICAgICAgICAgICAgaWYgdCBpbiAoIlJVTk5JTkciLCAiU1RPUFBFRCIsICJTVEFSVElORyIsICJTVE9QUElORyIpOgogICAgICAgICAgICAgICAgICAgIHJldHVybiB0CiAgICAgICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICAgICAgY29udGludWUKICAgICMg5Zue6YCA77ya5Y+C6ICD6aG555uuIGJhcy1sb2dpbi5qcyDnmoTpgInmi6nlmagKICAgIGZvciBmcmFtZSBpbiBpdGVyX2ZyYW1lcyhwYWdlKToKICAgICAgICB0cnk6CiAgICAgICAgICAgIGlmIGZyYW1lLmxvY2F0b3IoImEuc3RvcHBlZFN0YXR1cyIpLmNvdW50KCkgPiAwOgogICAgICAgICAgICAgICAgcmV0dXJuICJTVE9QUEVEIgogICAgICAgICAgICBpZiBmcmFtZS5sb2NhdG9yKCJhLmh5cGVybGluazpub3QoLmRpc2FibGVkKSIpLmNvdW50KCkgPiAwOgogICAgICAgICAgICAgICAgcmV0dXJuICJSVU5OSU5HIgogICAgICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgICAgIGNvbnRpbnVlCiAgICByZXR1cm4gIlVOS05PV04iCgoKZGVmIHN0YXJ0X3NwYWNlX2lmX3N0b3BwZWQocGFnZSwgdGFnOiBzdHIpIC0+IE5vbmU6CiAgICBzdGF0dXMgPSByZWFkX3NwYWNlX3N0YXR1cyhwYWdlKQogICAgbG9nKHRhZywgZiLwn5OKIGRldiBzcGFjZSDnirbmgIE6IHtzdGF0dXN9IikKCiAgICBpZiBzdGF0dXMgaW4gKCJSVU5OSU5HIiwgIlNUQVJUSU5HIik6CiAgICAgICAgcmV0dXJuCgogICAgbG9nKHRhZywgIuKWtu+4jyBkZXYgc3BhY2Ug5pyq6L+Q6KGM77yM54K55Ye75ZCv5YqoIC4uLiIpCiAgICBzdGFydGVkID0gY2xpY2tfaWZfZm91bmQoCiAgICAgICAgcGFnZSwKICAgICAgICBbCiAgICAgICAgICAgICIjc3RhcnRCdXR0b24wIiwKICAgICAgICAgICAgJ2J1dHRvblt0aXRsZSo9IlN0YXJ0Il0nLAogICAgICAgICAgICAnYnV0dG9uW2FyaWEtbGFiZWwqPSJTdGFydCJdJywKICAgICAgICBdLAogICAgICAgIDgwMDAsCiAgICApCiAgICBpZiBub3Qgc3RhcnRlZDoKICAgICAgICByYWlzZSBSdW50aW1lRXJyb3IoIuacquaJvuWIsOWQr+WKqOaMiemSru+8iOmhtemdoue7k+aehOWPr+iDveW3suWPmOWMlu+8iSIpCiAgICBsb2codGFnLCAi4pyFIOW3sueCueWHu+WQr+WKqO+8jOetieW+hSBSVU5OSU5HIC4uLiIpCgogICAgZGVhZGxpbmUgPSB0aW1lLnRpbWUoKSArIFNUQVJUX1RJTUVPVVRfU0VDCiAgICB3aGlsZSB0aW1lLnRpbWUoKSA8IGRlYWRsaW5lOgogICAgICAgIHRpbWUuc2xlZXAoMTApCiAgICAgICAgdHJ5OgogICAgICAgICAgICBwYWdlLnJlbG9hZCh3YWl0X3VudGlsPSJkb21jb250ZW50bG9hZGVkIiwgdGltZW91dD0zMDAwMCkKICAgICAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgICAgICBwYXNzCiAgICAgICAgZGlzbWlzc19kaWFsb2cocGFnZSwgMzAwMCkKICAgICAgICBzdGF0dXMgPSByZWFkX3NwYWNlX3N0YXR1cyhwYWdlKQogICAgICAgIGxvZyh0YWcsIGYiICAg562J5b6F5LitLi4uIOWJqeS9mSB7aW50KGRlYWRsaW5lIC0gdGltZS50aW1lKCkpfXPvvIzlvZPliY0ge3N0YXR1c30iKQogICAgICAgIGlmIHN0YXR1cyA9PSAiUlVOTklORyI6CiAgICAgICAgICAgIGxvZyh0YWcsICLinIUgZGV2IHNwYWNlIOW3siBSVU5OSU5HIikKICAgICAgICAgICAgcmV0dXJuCiAgICByYWlzZSBUaW1lb3V0RXJyb3IoZiJ7U1RBUlRfVElNRU9VVF9TRUN9cyDlhoUgZGV2IHNwYWNlIOacqui+vuWIsCBSVU5OSU5HIikKCgpkZWYgZW50ZXJfd29ya3NwYWNlKHBhZ2UsIGNvbnRleHQsIHNwYWNlOiBzdHIsIHRhZzogc3RyKToKICAgICIiIueCueWHu+epuumXtOmTvuaOpei/m+WFpee8lui+keWZqO+8m+e8lui+keWZqOWPr+iDveWcqOW9k+WJjemhte+8iGhhc2gg6Lev55Sx77yJ5oiW5paw5qCH562+5omT5byA44CCIiIiCiAgICBsb2codGFnLCAi8J+Wse+4jyDov5vlhaUgZGV2IHNwYWNlIOe8lui+keWZqCAuLi4iKQogICAgbmV3X3BhZ2VzID0gW10KICAgIGNvbnRleHQub24oInBhZ2UiLCBsYW1iZGEgcDogbmV3X3BhZ2VzLmFwcGVuZChwKSkKCiAgICBsaW5rID0gTm9uZQogICAgZm9yIGZyYW1lIGluIGl0ZXJfZnJhbWVzKHBhZ2UpOgogICAgICAgIHRyeToKICAgICAgICAgICAgY2FuZCA9IGZyYW1lLmxvY2F0b3IoJ2EuaHlwZXJsaW5rOm5vdCguZGlzYWJsZWQpW2hyZWYqPSIjd3MtIl0nKS5maXJzdAogICAgICAgICAgICBpZiBjYW5kLmNvdW50KCkgPiAwOgogICAgICAgICAgICAgICAgbGluayA9IGNhbmQKICAgICAgICAgICAgICAgIGJyZWFrCiAgICAgICAgICAgIGlmIHNwYWNlOgogICAgICAgICAgICAgICAgY2FuZCA9IGZyYW1lLmxvY2F0b3IoCiAgICAgICAgICAgICAgICAgICAgZidhLmh5cGVybGluazpub3QoLmRpc2FibGVkKTpoYXMtdGV4dCgie3NwYWNlfSIpJwogICAgICAgICAgICAgICAgKS5maXJzdAogICAgICAgICAgICAgICAgaWYgY2FuZC5jb3VudCgpID4gMDoKICAgICAgICAgICAgICAgICAgICBsaW5rID0gY2FuZAogICAgICAgICAgICAgICAgICAgIGJyZWFrCiAgICAgICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICAgICAgY29udGludWUKICAgIGlmIGxpbms6CiAgICAgICAgbGluay5jbGljaygpCiAgICBlbHNlOgogICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigi5pyq5om+5Yiw5Y+v54K55Ye755qE56m66Ze06ZO+5o6lIikKCiAgICB0aW1lLnNsZWVwKDMpCgogICAgZGVmIGlzX2VkaXRvcih1cmw6IHN0cikgLT4gYm9vbDoKICAgICAgICByZXR1cm4gIiN3cy0iIGluIHVybAoKICAgIGRlYWRsaW5lID0gdGltZS50aW1lKCkgKyBFRElUT1JfVElNRU9VVF9TRUMKICAgIHdoaWxlIHRpbWUudGltZSgpIDwgZGVhZGxpbmU6CiAgICAgICAgaWYgaXNfZWRpdG9yKHBhZ2UudXJsKToKICAgICAgICAgICAgbG9nKHRhZywgIuKchSDnvJbovpHlmajlt7LlnKjlvZPliY3pobXliqDovb0iKQogICAgICAgICAgICByZXR1cm4gcGFnZQogICAgICAgIGZvciBucCBpbiBuZXdfcGFnZXM6CiAgICAgICAgICAgIHRyeToKICAgICAgICAgICAgICAgIG5wLndhaXRfZm9yX2xvYWRfc3RhdGUoImRvbWNvbnRlbnRsb2FkZWQiLCB0aW1lb3V0PTMwMDApCiAgICAgICAgICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgICAgICAgICBwYXNzCiAgICAgICAgICAgIGlmIGlzX2VkaXRvcihucC51cmwpOgogICAgICAgICAgICAgICAgbG9nKHRhZywgIuKchSDnvJbovpHlmajlt7LlnKjmlrDmoIfnrb7pobXliqDovb0iKQogICAgICAgICAgICAgICAgcmV0dXJuIG5wCiAgICAgICAgZGlzbWlzc19kaWFsb2cocGFnZSwgMjAwMCkKICAgICAgICB0aW1lLnNsZWVwKDUpCiAgICByYWlzZSBUaW1lb3V0RXJyb3IoZiJ7RURJVE9SX1RJTUVPVVRfU0VDfXMg5YaF57yW6L6R5Zmo5pyq5Yqg6L29IikKCgojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0g5YGl5bq35qOA5p+lIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCmRlZiByZWFkX3Rlcm1pbmFsX3RleHQocGFnZSkgLT4gc3RyOgogICAgZm9yIGZyYW1lIGluIGl0ZXJfZnJhbWVzKHBhZ2UpOgogICAgICAgIHRyeToKICAgICAgICAgICAgcm93cyA9IGZyYW1lLmxvY2F0b3IoIi54dGVybS1yb3dzID4gZGl2IikKICAgICAgICAgICAgbiA9IHJvd3MuY291bnQoKQogICAgICAgICAgICBpZiBuOgogICAgICAgICAgICAgICAgcmV0dXJuICJcbiIuam9pbigKICAgICAgICAgICAgICAgICAgICByb3dzLm50aChpKS5pbm5lcl90ZXh0KCkgb3IgIiIgZm9yIGkgaW4gcmFuZ2UobikKICAgICAgICAgICAgICAgICkKICAgICAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgICAgICBjb250aW51ZQogICAgcmV0dXJuICIiCgoKZGVmIGVuc3VyZV90ZXJtaW5hbChwYWdlLCB0YWc6IHN0cik6CiAgICB0YSA9IGZpbmRfaW5fZnJhbWVzKHBhZ2UsICJ0ZXh0YXJlYS54dGVybS1oZWxwZXItdGV4dGFyZWEiLCAyMDAwMCkKICAgIGlmIG5vdCB0YToKICAgICAgICBsb2codGFnLCAi5pyq5qOA5rWL5Yiq57uI56uv77yM5bCd6K+V5Yib5bu677yIQ3RybCtg77yJLi4uIikKICAgICAgICBwYWdlLmtleWJvYXJkLnByZXNzKCJDb250cm9sK2AiKQogICAgICAgIHRpbWUuc2xlZXAoMikKICAgICAgICB0YSA9IGZpbmRfaW5fZnJhbWVzKHBhZ2UsICJ0ZXh0YXJlYS54dGVybS1oZWxwZXItdGV4dGFyZWEiLCAxNTAwMCkKICAgIGlmIG5vdCB0YToKICAgICAgICBjbGlja19pZl9mb3VuZChwYWdlLCBbJ2J1dHRvblt0aXRsZSo9Ik5ldyBUZXJtaW5hbCJdJ10sIDUwMDApCiAgICAgICAgdGEgPSBmaW5kX2luX2ZyYW1lcyhwYWdlLCAidGV4dGFyZWEueHRlcm0taGVscGVyLXRleHRhcmVhIiwgMTUwMDApCiAgICBpZiBub3QgdGE6CiAgICAgICAgcmFpc2UgUnVudGltZUVycm9yKCLml6Dms5XlrprkvY3nu4jnq6/vvIh4dGVybSB0ZXh0YXJlYe+8iSIpCiAgICB0cnk6CiAgICAgICAgdGEuY2xpY2soKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICBwYXNzCiAgICByZXR1cm4gdGEKCgpkZWYgcGFzdGVfY29tbWFuZChwYWdlLCBjbWQ6IHN0ciwgdGEpIC0+IGJvb2w6CiAgICAiIiLlkJHnu4jnq6/ms6jlhaXlkb3ku6TvvJrliarotLTmnb/nspjotLQgLT4gaW5zZXJ0X3RleHQgLT4g6YCQ6ZSu6L6T5YWl77yM5LiJ5bGC5Zue6YCA44CCIiIiCiAgICAjIDEpIOWJqui0tOadv+eymOi0tAogICAgdHJ5OgogICAgICAgIG9yaWdpbiA9IHJlLm1hdGNoKHIiKGh0dHBzPzovL1teL10rKSIsIHBhZ2UudXJsKS5ncm91cCgxKQogICAgICAgIHBhZ2UuY29udGV4dC5ncmFudF9wZXJtaXNzaW9ucygKICAgICAgICAgICAgWyJjbGlwYm9hcmQtcmVhZCIsICJjbGlwYm9hcmQtd3JpdGUiXSwgb3JpZ2luPW9yaWdpbgogICAgICAgICkKICAgICAgICBwYWdlLmV2YWx1YXRlKCJjID0+IG5hdmlnYXRvci5jbGlwYm9hcmQud3JpdGVUZXh0KGMpIiwgY21kKQogICAgICAgIHBhZ2Uua2V5Ym9hcmQucHJlc3MoIkNvbnRyb2wrdiIpCiAgICAgICAgcGFnZS5rZXlib2FyZC5wcmVzcygiRW50ZXIiKQogICAgICAgIHRpbWUuc2xlZXAoMikKICAgICAgICBpZiAiSEVBTFRIQ0hFQ0stIiBpbiByZWFkX3Rlcm1pbmFsX3RleHQocGFnZSk6CiAgICAgICAgICAgIHJldHVybiBUcnVlCiAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgIHBhc3MKICAgICMgMikgaW5zZXJ0X3RleHQKICAgIHRyeToKICAgICAgICB0YS5jbGljaygpCiAgICAgICAgcGFnZS5rZXlib2FyZC5pbnNlcnRfdGV4dChjbWQpCiAgICAgICAgcGFnZS5rZXlib2FyZC5wcmVzcygiRW50ZXIiKQogICAgICAgIHRpbWUuc2xlZXAoMikKICAgICAgICBpZiAiSEVBTFRIQ0hFQ0stIiBpbiByZWFkX3Rlcm1pbmFsX3RleHQocGFnZSk6CiAgICAgICAgICAgIHJldHVybiBUcnVlCiAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgIHBhc3MKICAgICMgMykg6YCQ6ZSu6L6T5YWl77yI5oWi6YCf77yJCiAgICB0cnk6CiAgICAgICAgdGEuY2xpY2soKQogICAgICAgIHBhZ2Uua2V5Ym9hcmQudHlwZShjbWQsIGRlbGF5PTYwKQogICAgICAgIHBhZ2Uua2V5Ym9hcmQucHJlc3MoIkVudGVyIikKICAgICAgICB0aW1lLnNsZWVwKDIpCiAgICAgICAgcmV0dXJuICJIRUFMVEhDSEVDSy0iIGluIHJlYWRfdGVybWluYWxfdGV4dChwYWdlKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICByZXR1cm4gRmFsc2UKCgpkZWYgaGVhbHRoX2NoZWNrKGVkaXRvcl9wYWdlLCB0YWc6IHN0cikgLT4gZGljdDoKICAgICIiIuWcqCBJREUg57uI56uv5omn6KGMIHN1cGVydmlzb3JkIOeKtuaAgeafpeivouW5tuaWreiogO+8iOadpeiHquWunuaImOmqjOivgeeahOiEmuacrO+8ieOAgiIiIgogICAgcmVzdWx0ID0geyJzdl9waWQiOiBOb25lLCAibWFya2VyIjogTm9uZSwgInRhc2tzIoge30sICJyYXciOiAiIn0KCiAgICBsb2codGFnLCAi4o+zIOetieW+hSAuYmFzaHJjIOmSqeWtkOW8leWvvCBzdXBlcnZpc29yZCAuLi4iKQogICAgdGltZS5zbGVlcChCT09UU1RSQVBfV0FJVF9TRUMpCiAgICBkaXNtaXNzX2lkZV9ub3RpZmljYXRpb25zKGVkaXRvcl9wYWdlKQoKICAgIHRhID0gZW5zdXJlX3Rlcm1pbmFsKGVkaXRvcl9wYWdlLCB0YWcpCiAgICBjbWQgPSBIRUFMVEhfQ01EX1RNUEwuZm9ybWF0KGNvbmY9U1VQRVJWSVNPUl9DT05GKQogICAgaWYgbm90IHBhc3RlX2NvbW1hbmQoZWRpdG9yX3BhZ2UsIGNtZCwgdGEpOgogICAgICAgIHJlc3VsdFsicmF3Il0gPSByZWFkX3Rlcm1pbmFsX3RleHQoZWRpdG9yX3BhZ2UpCiAgICAgICAgcmFpc2UgUnVudGltZUVycm9yKCLlgaXlurfmo4Dmn6Xlkb3ku6Tms6jlhaXlpLHotKXvvIjnu4jnq6/ml6Dlm57mmL7vvIkiKQoKICAgIHRpbWUuc2xlZXAoNCkKICAgIHRleHQgPSByZWFkX3Rlcm1pbmFsX3RleHQoZWRpdG9yX3BhZ2UpCiAgICByZXN1bHRbInJhdyJdID0gdGV4dAoKICAgIG0gPSByZS5zZWFyY2gociJTVi1QSUQ9KFxkKykiLCB0ZXh0KQogICAgcmVzdWx0WyJzdl9waWQiXSA9IGludChtLmdyb3VwKDEpKSBpZiBtIGVsc2UgTm9uZQogICAgcmVzdWx0WyJtYXJrZXIiXSA9ICJNQVJLRVItRVhJU1RTIiBpbiB0ZXh0CgogICAgZm9yIHRhc2sgaW4gSEVBTFRIQ0hFQ0tfVEFTS1M6CiAgICAgICAgbSA9IHJlLnNlYXJjaChyZiJee3JlLmVzY2FwZSh0YXNrKX1ccytSVU5OSU5HXHMrcGlkXHMrKFxkKykiLCB0ZXh0LCByZS5NKQogICAgICAgIHJlc3VsdFsidGFza3MiXVt0YXNrXSA9IGludChtLmdyb3VwKDEpKSBpZiBtIGVsc2UgTm9uZQoKICAgICMg6Ieq5Yqo5L+u5aSN77ya5LuF5a+55pyqIFJVTk5JTkcg55qE5Lu75YqhIHN0YXJ0IGFsbO+8iOS4jeW9seWTjeW3sui/kOihjOS7u+WKoe+8ie+8jOWkjeafpeS4gOasoQogICAgZGVhZCA9IFt0IGZvciB0LCBwaWQgaW4gcmVzdWx0WyJ0YXNrcyJdLml0ZW1zKCkgaWYgcGlkIGlzIE5vbmVdCiAgICBpZiBkZWFkIGFuZCBBVVRPX0ZJWCBhbmQgSEVBTFRIQ0hFQ0tfVEFTS1M6CiAgICAgICAgbG9nKHRhZywgZiLwn5SnIOWPkeeOsOacqui/kOihjOS7u+WKoSB7ZGVadh7vvIzmiafooYwgc3VwZXJ2aXNvcmN0bCBzdGFydCBhbGwgLi4uIikKICAgICAgICBmaXhfY21kID0gKAogICAgICAgICAgICBmInN1cGVydmlzb3JjdGwgLWMge1NVUEVSVklTT1JfQ09ORn0gc3RhcnQgYWxsID4vZGV2L251bGwgMj4mMTsgIgogICAgICAgICAgICBmInNsZWVwIDM7IHN1cGVydmlzb3JjdGwgLWMge1NVUEVSVklTT1JfQ09ORn0gc3RhdHVzIgogICAgICAgICkKICAgICAgICBwYXN0ZV9jb21tYW5kKGVkaXRvcl9wYWdlLCBmaXhfY21kLCB0YSkKICAgICAgICB0aW1lLnNsZWVwKDgpCiAgICAgICAgdGV4dCA9IHJlYWRfdGVybWluYWxfdGV4dChlZGl0b3JfcGFnZSkKICAgICAgICByZXN1bHRbInJhdyJdICs9ICJcbi0tLSBhZnRlciBhdXRvZml4IC0tLVxuIiArIHRleHQKICAgICAgICBmb3IgdGFzayBpbiBIRUFMVEhDSEVDS19UQVNLUzoKICAgICAgICAgICAgbSA9IHJlLnNlYXJjaChyZiJee3JlLmVzY2FwZSh0YXNrKX1ccytSVU5OSU5HXHMrcGlkXHMrKFxkKykiLCB0ZXh0LCByZS5NKQogICAgICAgICAgICBpZiBtIGFuZCByZXN1bHRbInRhc2tzIl1bdGFza10gaXMgTm9uZToKICAgICAgICAgICAgICAgIHJlc3VsdFsidGFza3MiXVt0YXNrXSA9IGludChtLmdyb3VwKDEpKQoKICAgIHJldHVybiByZXN1bHQKCgpkZWYgcmVwb3J0X2hlYWx0aCh0YWc6IHN0ciwgYWNjb3VudDogZGljdCwgcjogZGljdCkgLT4gYm9vbDoKICAgIG9rX3Rhc2tzID0ge3Q6IHAgZm9yIHQsIHAgaW4gclsidGFza3MiXS5pdGVtcygpIGlmIHAgaXMgbm90IE5vbmV9CiAgICBkZWFkID0gW3QgZm9yIHQsIHAgaW4gclsidGFza3MiXS5pdGVtcygpIGlmIHAgaXMgTm9uZV0gXAogICAgICAgIGlmIEhFQUxUSENIRUNLX1RBU0tTIGVsc2UgW10KICAgIGhlYWx0aHkgPSAobm90IGRlYWQpIGFuZCAoclsic3ZfcGlkIl0gaXMgbm90IE5vbmUpIGFuZCByWyJtYXJrZXIiXQoKICAgIGxvZyh0YWcsICItLS0tLS0tLS0g5YGl5bq35qOA5p+l57uT5p6cIC0tLS0tLS0tLSIpCiAgICBsb2codGFnLCBmInN1cGVydmlzb3JkIHBpZCA6IHtyWydzdl9waWQnXX0iKQogICAgbG9nKHRhZywgZiJib290c3RyYXAg5qCH6K6wICA6IHsn5a2Y5ZyoJyBpZiByWydtYXJrZXInXSBlbHNlICfnvLrlpLEnfSIpCiAgICBmb3IgdCwgcCBpbiByWyJ0YXNrcyJdLml0ZW1zKCk6CiAgICAgICAgbG9nKHRhZywgZiIgIHsn4pyFJyBpZiBwIGVsc2UgJ+KdjCd9IHt0OjI0c30geydSVU5OSU5HIHBpZD0nICsgc3RyKHApIGlmIHAgZWxzZSAnTk9UIFJVTk5JTkcnfSIpCiAgICBsb2codGFnLCBmIue7k+iuujogeyfinIUg5bqU55So6L+Q6KGM5q2j5bi4JyBpZiBoZWFsdGh5IGVsc2UgJ+KdjCDlupTnlKjlvILluLgnfSIpCgogICAgZ2hfc3VtbWFyeSgKICAgICAgICBmIiMjIyBbe3RhZ31dIHthY2NvdW50WydzcGFjZSddIG9yIGFjY291bnRbJ3VzZXInXX1cbiIKICAgICAgICBmInwg6aG555uuIHwg57uT5p6cIHxcbnwtLS18LS0tfFxuIgogICAgICAgIGYifCBzdXBlcnZpc29yZCBwaWQgfCB7clsnc3ZfcGlkJ119IHxcbiIKICAgICAgICBmInwgYm9vdHN0cmFwIOagh+iusCB8IHsn4pyFJyBpZiByWydtYXJrZXInXSBlbHNlICfinYwnfSB8XG4iCiAgICAgICAgKyAiIi5qb2luKAogICAgICAgICAgICBmInwge3R9IHwgeyfinIUgUlVOTklORyBwaWQ9JyArIHN0cihwKSBpZiBwIGVsc2UgJ+KdjCBOT1QgUlVOTklORyd9IHxcbiIKICAgICAgICAgICAgZm9yIHQsIHAgaW4gclsidGFza3MiXS5pdGVtcygpCiAgICAgICAgKQogICAgICAgICsgZiJcbioq57uT6K66OiB7J+KchSDlupTnlKjov5DooYzmraPluLgnIGlmIGhlYWx0aHkgZWxzZSAn4p2MIOW6lOeUqOW8guW4uCd9KipcbiIKICAgICkKICAgIHJldHVybiBoZWFsdGh5CgoKIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0g5Li75rWB56iLIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKZGVmIGtlZXBhbGl2ZV9vbmUoYWNjb3VudDogZGljdCwgaW5kZXg6IGludCkgLT4gYm9vbDoKICAgIHRhZyA9IGYiQWNjb3VudHtpbmRleCArIDF9IgogICAgbG9nKHRhZywgZiI9PT0g5byA5aeL5L+d5rS7ICh7YWNjb3VudFsnc3BhY2UnXSBvciBhY2NvdW50Wyd1c2VyJ119KSA9PT0iKQogICAgd2l0aCBzeW5jX3BsYXl3cmlnaHQoKSBhcyBwOgogICAgICAgIGJyb3dzZXIgPSBwLmNocm9taXVtLmxhdW5jaCgKICAgICAgICAgICAgaGVhZGxlc3M9SEVBRExFU1MsCiAgICAgICAgICAgIGFyZ3M9WyItLW5vLXNhbmRib3giLCAiLS1kaXNhYmxlLXNldHVpZC1zYW5kYm94Il0sCiAgICAgICAgKQogICAgICAgIGNvbnRleHQgPSBicm93c2VyLm5ld19jb250ZXh0KAogICAgICAgICAgICB1c2VyX2FnZW50PSgiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgIgogICAgICAgICAgICAgICAgICAgICAgICAiQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgIgogICAgICAgICAgICAgICAgICAgICAgICAiQ2hyb21lLzEyNi4wLjAuMCBTYWZhcmkvNTM3LjM2IiksCiAgICAgICAgICAgIHZpZXdwb3J0PXsid2lkdGgiOiAxNjAwLCAiaGVpZ2h0IjogMTAwMH0sCiAgICAgICAgKQogICAgICAgIHBhZ2UgPSBjb250ZXh0Lm5ld19wYWdlKCkKICAgICAgICB0cnk6CiAgICAgICAgICAgIGxvZ2luKHBhZ2UsIGFjY291bnRbImJhc191cmwiXSwgYWNjb3VudFsidXNlciJdLCBhY2NvdW50WyJwYXNzd29yZCJdKQogICAgICAgICAgICBkaXNtaXNzX2RpYWxvZyhwYWdlLCAxMDAwMCkKICAgICAgICAgICAgc3RhcnRfc3BhY2VfaWZfc3RvcHBlZChwYWdlLCB0YWcpCiAgICAgICAgICAgIGVkaXRvcl9wYWdlID0gZW50ZXJfd29ya3NwYWNlKHBhZ2UsIGNvbnRleHQsIGFjY291bnRbInNwYWNlIl0sIHRhZykKCiAgICAgICAgICAgIGlmIEhFQUxUSENIRUNLX0VOQUJMRUQ6CiAgICAgICAgICAgICAgICBkaXNtaXNzX2RpYWxvZyhlZGl0b3JfcGFnZSwgNTAwMCkKICAgICAgICAgICAgICAgIHIgPSBoZWFsdGhfY2hlY2soZWRpdG9yX3BhZ2UsIHRhZykKICAgICAgICAgICAgICAgIGhlYWx0aHkgPSByZXBvcnRfaGVhbHRoKHRhZywgYWNjb3VudCwgcikKICAgICAgICAgICAgICAgIGxvZyh0YWcsIGYi4o+zIOWBnOeVmSB7U1RBWV9TRUNPTkRTfXPvvIjorrDlvZXmtLvot4PvvIkuLi4iKQogICAgICAgICAgICAgICAgdGltZS5zbGVlcChTVEFZX1NFQ09ORFMpCiAgICAgICAgICAgICAgICBsb2codGFnLCAi4pyFIERvbmUhIEFjdGl2aXR5IHJlY29yZGVkLiIpCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBoZWFsdGh5ID0gVHJ1ZQogICAgICAgICAgICAgICAgbG9nKHRhZywgZiLij7Mg5YGc55WZIHtTVEFZX1NFQ09ORFN9c++8iOiusOW9lea0u+i3g++8iS4uLiIpCiAgICAgICAgICAgICAgICB0aW1lLnNsZWVwKFNUQVlfU0VDT05EUykKICAgICAgICAgICAgICAgIGxvZyh0YWcsICLinIUgRG9uZSEgQWN0aXZpdHkgcmVjb3JkZWQuIikKCiAgICAgICAgICAgIGxvZyh0YWcsIGYiPT09IOe7k+adnyB7J+KchScgaWYgaGVhbHRoeSBlbHNlICfinYwnfSA9PT0iKQogICAgICAgICAgICByZXR1cm4gaGVhbHRoeQoKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGVycjoKICAgICAgICAgICAgbG9nKHRhZywgZiLinYwge2Vycn0iKQogICAgICAgICAgICBnaF9zdW1tYXJ5KGYiIyMjIFt7dGFnfV0g4p2MIOWksei0pVxuXG5gYGBcbntlcnJ9XG5gYGBcbiIpCiAgICAgICAgICAgIHJldHVybiBGYWxzZQogICAgICAgIGZpbmFsbHk6CiAgICAgICAgICAgIHRyeToKICAgICAgICAgICAgICAgIGJyb3dzZXIuY2xvc2UoKQogICAgICAgICAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgICAgICAgICAgcGFzcwoKCmRlZiBtYWluKCkgLT4gaW50OgogICAgYWNjb3VudHMgPSBwYXJzZV9hY2NvdW50cygpCiAgICBsb2coIk1BSU4iLCBmIvCfmoAg5byA5aeL5L+d5rS777yM5YWxIHtsZW4oYWNjb3VudHMpfSDkuKrotKblj7fvvIjmr48gMiDlsI/ml7bnlLEgR2l0SHViIEFjdGlvbnMg6Kem5Y+R77yJIikKICAgIHJlc3VsdHMgPSBbXQogICAgZm9yIGksIGFjYyBpbiBlbnVtZXJhdGUoYWNjb3VudHMpOgogICAgICAgIHRyeToKICAgICAgICAgICAgcmVzdWx0cy5hcHBlbmQoa2VlcGFsaXZlX29uZShhY2MsIGkpKQogICAgICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZXJyOgogICAgICAgICAgICBsb2coZiJBY2NvdW50e2kgKyAxfSIsIGYi4p2MIOacquaNleiOt+W8guW4uDoge2Vycn0iKQogICAgICAgICAgICByZXN1bHRzLmFwcGVuZChGYWxzZSkKICAgICAgICBpZiBpIDwgbGVuKGFjY291bnRzKSAtIDE6CiAgICAgICAgICAgIHRpbWUuc2xlZXAoNSkKCiAgICBvayA9IHN1bShyZXN1bHRzKQogICAgbG9nKCJNQUlOIiwgZiLinIUg5a6M5oiQOiB7b2t9L3tsZW4ocmVzdWx0cyl9IOS4qui0puWPt+ato+W4uCIpCiAgICBnaF9zdW1tYXJ5KGYiLS0tXG4qKuaxh+aAuzoge29rfS97bGVuKHJlc3VsdHMpfSDkuKrotKblj7fmraPluLgqKlxuIikKICAgIGlmIG5vdCBhbGwocmVzdWx0cykgYW5kIEZBSUxfT05fVU5IRUFMVEhZOgogICAgICAgIHJldHVybiAxCiAgICByZXR1cm4gMAoKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBzeXMuZXhpdChtYWluKCkpCg==
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+SAP BAS Keep Alive + 健康检查
+================================================================
+融合两份经过实战验证的流程：
+  1. 登录保活（参考 zaofengyue/sap-bas-keepalive 的 JS 版逻辑）
+     登录 BTP -> 处理隐私弹窗 -> 检查 dev space 状态
+     -> 若 STOPPED 则启动并等待 RUNNING -> 进入编辑器停留
+  2. 应用健康检查（来自已验证的 bas_devspace_restart_test.py）
+     进入 IDE 后在终端执行 supervisord 状态查询，
+     逐一断言服务 RUNNING，可选自动修复（supervisorctl start all）
+
+环境变量（均可通过 GitHub Secrets / workflow env 配置）：
+  BAS_URL            必填，BAS 地址，多账号用 ';' 分隔
+  BTP_USER           必填，登录邮箱，多账号用 ';' 分隔
+  BTP_PASSWORD       必填，登录密码，多账号用 ';' 分隔
+  BAS_SPACE_NAME     选填，dev space 名称，多账号用 ';' 分隔
+  HEALTHCHECK_ENABLED 默认 true，是否执行终端健康检查
+  HEALTHCHECK_TASKS  默认 6 个服务名，';' 分隔；设为空跳过逐一断言
+  SUPERVISOR_CONF    默认 ~/.config/supervisor/supervisord.conf
+  AUTO_FIX           默认 true，发现任务未 RUNNING 时自动 start all 并复查
+  STAY_SECONDS       默认 60，编辑器内停留时长（记录活跃）
+  BOOTSTRAP_WAIT_SEC 默认 40，等待 .bashrc 钩子引导 supervisord
+  START_TIMEOUT_SEC  默认 300，等待 dev space 变 RUNNING 的超时
+  EDITOR_TIMEOUT_SEC 默认 180，等待编辑器加载的超时
+  HEADLESS           默认 true；本地调试可设 false
+  FAIL_ON_UNHEALTHY  默认 true，健康检查失败时进程退出码非 0（Actions 标红）
+"""
+
+import os
+import re
+import sys
+import time
+
+from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+
+# ---------------------------- 配置 ----------------------------
+
+def env_bool(name: str, default: bool) -> bool:
+    v = os.environ.get(name)
+    if v is None:
+        return default
+    return v.strip().lower() in ("1", "true", "yes", "y", "on")
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, "").strip() or default)
+    except ValueError:
+        return default
+
+
+HEADLESS = env_bool("HEADLESS", True)
+HEALTHCHECK_ENABLED = env_bool("HEALTHCHECK_ENABLED", True)
+AUTO_FIX = env_bool("AUTO_FIX", True)
+FAIL_ON_UNHEALTHY = env_bool("FAIL_ON_UNHEALTHY", True)
+
+STAY_SECONDS = env_int("STAY_SECONDS", 60)
+BOOTSTRAP_WAIT_SEC = env_int("BOOTSTRAP_WAIT_SEC", 40)
+START_TIMEOUT_SEC = env_int("START_TIMEOUT_SEC", 300)
+EDITOR_TIMEOUT_SEC = env_int("EDITOR_TIMEOUT_SEC", 180)
+
+SUPERVISOR_CONF = os.environ.get(
+    "SUPERVISOR_CONF", "~/.config/supervisor/supervisord.conf"
+)
+DEFAULT_TASKS = "cloudflared;komari-agent;opencode-telegram-bot;ttyd;vscode-terminal-task;xray"
+HEALTHCHECK_TASKS = [
+    t.strip() for t in os.environ.get("HEALTHCHECK_TASKS", DEFAULT_TASKS).split(";")
+    if t.strip()
+]
+
+LOGIN_TIMEOUT_MS = 60_000
+HEALTH_CMD_TMPL = (
+    'echo HEALTHCHECK-$(date +%H:%M:%S); '
+    'P=$(pgrep -x supervisord | head -1); echo SV-PID=$P; '
+    'test -f /tmp/.sv-bootstrapped && echo MARKER-EXISTS || echo NO-MARKER; '
+    'supervisorctl -c {conf} status 2>&1'
+)
+
+
+def parse_accounts():
+    urls = [s.strip() for s in os.environ.get("BAS_URL", "").split(";") if s.strip()]
+    users = [s.strip() for s in os.environ.get("BTP_USER", "").split(";") if s.strip()]
+    pwds = [s.strip() for s in os.environ.get("BTP_PASSWORD", "").split(";") if s.strip()]
+    spaces = [s.strip() for s in os.environ.get("BAS_SPACE_NAME", "").split(";") if s.strip()]
+    if not urls:
+        log("MAIN", "❌ BAS_URL 未配置")
+        sys.exit(1)
+    return [
+        {
+            "bas_url": urls[i],
+            "user": users[i] if i < len(users) else (users[0] if users else ""),
+            "password": pwds[i] if i < len(pwds) else (pwds[0] if pwds else ""),
+            "space": spaces[i] if i < len(spaces) else (spaces[0] if spaces else ""),
+        }
+        for i in range(len(urls))
+    ]
+
+
+# ---------------------------- 日志 ----------------------------
+
+def log(tag: str, msg: str) -> None:
+    print(f"[{time.strftime('%H:%M:%S')}] [{tag}] {msg}", flush=True)
+
+
+def gh_summary(text: str) -> None:
+    """写入 GitHub Actions Job Summary（本地运行时忽略）。"""
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if path:
+        try:
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(text + "\n")
+        except OSError:
+            pass
+
+
+# ------------------------ 页面查找辅助 ------------------------
+
+def iter_frames(page):
+    """主页面 + 所有 iframe（BAS 大量内容嵌在 iframe 中）。"""
+    try:
+        return list(page.frames)
+    except Exception:
+        return [page.main_frame]
+
+
+def find_in_frames(page, selector: str, timeout_ms: int = 3000):
+    """在所有 frame 中查找第一个匹配的 locator，超时返回 None。"""
+    deadline = time.time() + timeout_ms / 1000
+    while time.time() < deadline:
+        for frame in iter_frames(page):
+            try:
+                loc = frame.locator(selector).first
+                if loc.count() > 0 and loc.is_visible():
+                    return loc
+            except Exception:
+                continue
+        time.sleep(0.5)
+    return None
+
+
+def click_if_found(page, selectors, timeout_ms: int = 3000) -> bool:
+    """依次尝试 selectors，找到可见的就点击。"""
+    loc = find_in_frames(page, ",".join(selectors), timeout_ms) \
+        if all(isinstance(s, str) for s in selectors) else None
+    if loc:
+        try:
+            loc.click(timeout=3000)
+            return True
+        except Exception:
+            pass
+    for sel in selectors:  # 逐个重试（组合选择器可能因单帧不可见而漏检）
+        l2 = find_in_frames(page, sel, 1500)
+        if l2:
+            try:
+                l2.click(timeout=3000)
+                return True
+            except Exception:
+                continue
+    return False
+
+
+# ------------------------ 通用弹窗处理 ------------------------
+
+def dismiss_dialog(page, timeout_ms: int = 8000) -> bool:
+    """处理 BAS 首次登录的隐私声明等弹窗：勾选复选框后点 OK/Accept。"""
+    btn = find_in_frames(
+        page,
+        'button:has-text("OK"), button:has-text("Accept"), button:has-text("Agree")',
+        timeout_ms,
+    )
+    if not btn:
+        return False
+    # 在所有 frame 内勾选可见复选框
+    for frame in iter_frames(page):
+        try:
+            cbs = frame.locator('input[type="checkbox"]')
+            for i in range(min(cbs.count(), 3)):
+                c = cbs.nth(i)
+                if c.is_visible() and not c.is_checked():
+                    c.click()
+                    time.sleep(0.5)
+        except Exception:
+            continue
+    try:
+        btn.click()
+        time.sleep(1.5)
+        return True
+    except Exception:
+        return False
+
+
+def dismiss_ide_notifications(page) -> None:
+    """处理 IDE 内通知（来自实战记录）：
+    - 恶意文件警告 -> 点 Ignore（绝不删除用户文件）
+    - 普通通知     -> Clear Notification
+    """
+    for frame in iter_frames(page):
+        try:
+            for btn in frame.get_by_role(
+                "button", name=re.compile(r"^\s*Ignore\s*$", re.I)
+            ).all():
+                if btn.is_visible():
+                    btn.click()
+                    log("NOTIF", "已忽略恶意文件警告（保留文件）")
+                    time.sleep(0.8)
+        except Exception:
+            continue
+        try:
+            for btn in frame.locator("button[title*='Clear Notification']").all():
+                if btn.is_visible():
+                    btn.click()
+                    time.sleep(0.5)
+        except Exception:
+            continue
+
+
+# --------------------------- 登录 ---------------------------
+
+USER_FIELD = 'input[type="email"], input[name="logonuidfield"], #j_username'
+PWD_FIELD = 'input[type="password"], #j_password'
+SUBMIT_FIELD = ('button[type="submit"], #logOnFormSubmit, '
+                'button:has-text("Sign In"), button:has-text("Log On")')
+
+
+def login(page, bas_url: str, user: str, password: str) -> None:
+    log("LOGIN", f"打开 {bas_url}")
+    page.goto(bas_url, wait_until="domcontentloaded", timeout=LOGIN_TIMEOUT_MS)
+
+    # 已有会话则跳过登录表单
+    if find_in_frames(page, USER_FIELD, 8000) is None:
+        try:
+            page.wait_for_url(re.compile(r"applicationstudio\.cloud\.sap"),
+                              timeout=15000)
+            log("LOGIN", "✅ 已存在会话，免登录")
+            return
+        except PWTimeout:
+            pass
+
+    log("LOGIN", "📧 输入邮箱...")
+    field = find_in_frames(page, USER_FIELD, 30000)
+    if not field:
+        raise RuntimeError("未找到登录用户名输入框（页面结构可能已变化）")
+    field.fill(user)
+    time.sleep(1)
+    # 新版 BTP 登录：邮箱 -> Continue -> 密码；经典表单：同页双输入框
+    click_if_found(
+        page,
+        ['button:has-text("Continue")', 'button:has-text("Next")', "#continue"],
+        3000,
+    )
+
+    log("LOGIN", "🔑 输入密码...")
+    pwd = find_in_frames(page, PWD_FIELD, 20000)
+    if not pwd:
+        raise RuntimeError("未找到密码输入框")
+    pwd.fill(password)
+    time.sleep(0.5)
+
+    if not click_if_found(page, SUBMIT_FIELD.split(", "), 5000):
+        page.keyboard.press("Enter")
+    log("LOGIN", "等待跳转 BAS ...")
+    page.wait_for_url(re.compile(r"applicationstudio\.cloud\.sap"),
+                      timeout=LOGIN_TIMEOUT_MS)
+    log("LOGIN", "✅ 登录成功")
+
+
+# ---------------------- dev space 状态管理 ----------------------
+
+STATUS_RE = re.compile(r"^(RUNNING|STOPPED|STARTING|STOPPING)$", re.I)
+
+
+def read_space_status(page) -> str:
+    """读取 dev space 状态：优先状态文本，回退到参考项目的 CSS 类选择器。"""
+    for frame in iter_frames(page):
+        try:
+            els = frame.get_by_text(STATUS_RE)
+            for el in els.all():
+                t = (el.inner_text() or "").strip().upper()
+                if t in ("RUNNING", "STOPPED", "STARTING", "STOPPING"):
+                    return t
+        except Exception:
+            continue
+    # 回退：参考项目 bas-login.js 的选择器
+    for frame in iter_frames(page):
+        try:
+            if frame.locator("a.stoppedStatus").count() > 0:
+                return "STOPPED"
+            if frame.locator("a.hyperlink:not(.disabled)").count() > 0:
+                return "RUNNING"
+        except Exception:
+            continue
+    return "UNKNOWN"
+
+
+def start_space_if_stopped(page, tag: str) -> None:
+    status = read_space_status(page)
+    log(tag, f"📊 dev space 状态: {status}")
+
+    if status in ("RUNNING", "STARTING"):
+        return
+
+    log(tag, "▶️ dev space 未运行，点击启动 ...")
+    started = click_if_found(
+        page,
+        [
+            "#startButton0",
+            'button[title*="Start"]',
+            'button[aria-label*="Start"]',
+        ],
+        8000,
+    )
+    if not started:
+        raise RuntimeError("未找到启动按钮（页面结构可能已变化）")
+    log(tag, "✅ 已点击启动，等待 RUNNING ...")
+
+    deadline = time.time() + START_TIMEOUT_SEC
+    while time.time() < deadline:
+        time.sleep(10)
+        try:
+            page.reload(wait_until="domcontentloaded", timeout=30000)
+        except Exception:
+            pass
+        dismiss_dialog(page, 3000)
+        status = read_space_status(page)
+        log(tag, f"   等待中... 剩余 {int(deadline - time.time())}s，当前 {status}")
+        if status == "RUNNING":
+            log(tag, "✅ dev space 已 RUNNING")
+            return
+    raise TimeoutError(f"{START_TIMEOUT_SEC}s 内 dev space 未达到 RUNNING")
+
+
+def enter_workspace(page, context, space: str, tag: str):
+    """点击空间链接进入编辑器；编辑器可能在当前页（hash 路由）或新标签打开。"""
+    log(tag, "🖱️ 进入 dev space 编辑器 ...")
+    new_pages = []
+    context.on("page", lambda p: new_pages.append(p))
+
+    link = None
+    for frame in iter_frames(page):
+        try:
+            cand = frame.locator('a.hyperlink:not(.disabled)[href*="#ws-"]').first
+            if cand.count() > 0:
+                link = cand
+                break
+            if space:
+                cand = frame.locator(
+                    f'a.hyperlink:not(.disabled):has-text("{space}")'
+                ).first
+                if cand.count() > 0:
+                    link = cand
+                    break
+        except Exception:
+            continue
+    if link:
+        link.click()
+    else:
+        raise RuntimeError("未找到可点击的空间链接")
+
+    time.sleep(3)
+
+    def is_editor(url: str) -> bool:
+        return "#ws-" in url
+
+    deadline = time.time() + EDITOR_TIMEOUT_SEC
+    while time.time() < deadline:
+        if is_editor(page.url):
+            log(tag, "✅ 编辑器已在当前页加载")
+            return page
+        for np in new_pages:
+            try:
+                np.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
+            if is_editor(np.url):
+                log(tag, "✅ 编辑器已在新标签页加载")
+                return np
+        dismiss_dialog(page, 2000)
+        time.sleep(5)
+    raise TimeoutError(f"{EDITOR_TIMEOUT_SEC}s 内编辑器未加载")
+
+
+# ------------------------- 健康检查 -------------------------
+
+def read_terminal_text(page) -> str:
+    for frame in iter_frames(page):
+        try:
+            rows = frame.locator(".xterm-rows > div")
+            n = rows.count()
+            if n:
+                return "\n".join(
+                    rows.nth(i).inner_text() or "" for i in range(n)
+                )
+        except Exception:
+            continue
+    return ""
+
+
+def ensure_terminal(page, tag: str):
+    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 20000)
+    if not ta:
+        log(tag, "未检测到终端，尝试创建（Ctrl+`）...")
+        page.keyboard.press("Control+`")
+        time.sleep(2)
+        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 15000)
+    if not ta:
+        click_if_found(page, ['button[title*="New Terminal"]'], 5000)
+        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 15000)
+    if not ta:
+        raise RuntimeError("无法定位终端（xterm textarea）")
+    try:
+        ta.click()
+    except Exception:
+        pass
+    return ta
+
+
+def paste_command(page, cmd: str, ta) -> bool:
+    """向终端注入命令：剪贴板粘贴 -> insert_text -> 逐键输入，三层回退。"""
+    # 1) 剪贴板粘贴
+    try:
+        origin = re.match(r"(https?://[^/]+)", page.url).group(1)
+        page.context.grant_permissions(
+            ["clipboard-read", "clipboard-write"], origin=origin
+        )
+        page.evaluate("c => navigator.clipboard.writeText(c)", cmd)
+        page.keyboard.press("Control+v")
+        page.keyboard.press("Enter")
+        time.sleep(2)
+        if "HEALTHCHECK-" in read_terminal_text(page):
+            return True
+    except Exception:
+        pass
+    # 2) insert_text
+    try:
+        ta.click()
+        page.keyboard.insert_text(cmd)
+        page.keyboard.press("Enter")
+        time.sleep(2)
+        if "HEALTHCHECK-" in read_terminal_text(page):
+            return True
+    except Exception:
+        pass
+    # 3) 逐键输入（慢速）
+    try:
+        ta.click()
+        page.keyboard.type(cmd, delay=60)
+        page.keyboard.press("Enter")
+        time.sleep(2)
+        return "HEALTHCHECK-" in read_terminal_text(page)
+    except Exception:
+        return False
+
+
+def health_check(editor_page, tag: str) -> dict:
+    """在 IDE 终端执行 supervisord 状态查询并断言（来自实战验证的脚本）。"""
+    result = {"sv_pid": None, "marker": None, "tasks": {}, "raw": ""}
+
+    log(tag, "⏳ 等待 .bashrc 钩子引导 supervisord ...")
+    time.sleep(BOOTSTRAP_WAIT_SEC)
+    dismiss_ide_notifications(editor_page)
+
+    ta = ensure_terminal(editor_page, tag)
+    cmd = HEALTH_CMD_TMPL.format(conf=SUPERVISOR_CONF)
+    if not paste_command(editor_page, cmd, ta):
+        result["raw"] = read_terminal_text(editor_page)
+        raise RuntimeError("健康检查命令注入失败（终端无回显）")
+
+    time.sleep(4)
+    text = read_terminal_text(editor_page)
+    result["raw"] = text
+
+    m = re.search(r"SV-PID=(\d+)", text)
+    result["sv_pid"] = int(m.group(1)) if m else None
+    result["marker"] = "MARKER-EXISTS" in text
+
+    for task in HEALTHCHECK_TASKS:
+        m = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", text, re.M)
+        result["tasks"][task] = int(m.group(1)) if m else None
+
+    # 自动修复：仅对未 RUNNING 的任务 start all（不影响已运行任务），复查一次
+    dead = [t for t, pid in result["tasks"].items() if pid is None]
+    if dead and AUTO_FIX and HEALTHCHECK_TASKS:
+        log(tag, f"🔧 发现未运行任务 {dead}，执行 supervisorctl start all ...")
+        fix_cmd = (
+            f"supervisorctl -c {SUPERVISOR_CONF} start all >/dev/null 2>&1; "
+            f"sleep 3; supervisorctl -c {SUPERVISOR_CONF} status"
+        )
+        paste_command(editor_page, fix_cmd, ta)
+        time.sleep(8)
+        text = read_terminal_text(editor_page)
+        result["raw"] += "\n--- after autofix ---\n" + text
+        for task in HEALTHCHECK_TASKS:
+            m = re.search(rf"^{re.escape(task)}\s+RUNNING\s+pid\s+(\d+)", text, re.M)
+            if m and result["tasks"][task] is None:
+                result["tasks"][task] = int(m.group(1))
+
+    return result
+
+
+def report_health(tag: str, account: dict, r: dict) -> bool:
+    ok_tasks = {t: p for t, p in r["tasks"].items() if p is not None}
+    dead = [t for t, p in r["tasks"].items() if p is None] \
+        if HEALTHCHECK_TASKS else []
+    healthy = (not dead) and (r["sv_pid"] is not None) and r["marker"]
+
+    log(tag, "--------- 健康检查结果 ---------")
+    log(tag, f"supervisord pid : {r['sv_pid']}")
+    log(tag, f"bootstrap 标记  : {'存在' if r['marker'] else '缺失'}")
+    for t, p in r["tasks"].items():
+        log(tag, f"  {'✅' if p else '❌'} {t:24s} {'RUNNING pid=' + str(p) if p else 'NOT RUNNING'}")
+    log(tag, f"结论: {'✅ 应用运行正常' if healthy else '❌ 应用异常'}")
+
+    gh_summary(
+        f"### [{tag}] {account['space'] or account['user']}\n"
+        f"| 项目 | 结果 |\n|---|---|\n"
+        f"| supervisord pid | {r['sv_pid']} |\n"
+        f"| bootstrap 标记 | {'✅' if r['marker'] else '❌'} |\n"
+        + "".join(
+            f"| {t} | {'✅ RUNNING pid=' + str(p) if p else '❌ NOT RUNNING'} |\n"
+            for t, p in r["tasks"].items()
+        )
+        + f"\n**结论: {'✅ 应用运行正常' if healthy else '❌ 应用异常'}**\n"
+    )
+    return healthy
+
+
+# --------------------------- 主流程 ---------------------------
+
+def keepalive_one(account: dict, index: int) -> bool:
+    tag = f"Account{index + 1}"
+    log(tag, f"=== 开始保活 ({account['space'] or account['user']}) ===")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=HEADLESS,
+            args=["--no-sandbox", "--disable-setuid-sandbox"],
+        )
+        context = browser.new_context(
+            user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/126.0.0.0 Safari/537.36"),
+            viewport={"width": 1600, "height": 1000},
+        )
+        page = context.new_page()
+        try:
+            login(page, account["bas_url"], account["user"], account["password"])
+            dismiss_dialog(page, 10000)
+            start_space_if_stopped(page, tag)
+            editor_page = enter_workspace(page, context, account["space"], tag)
+
+            if HEALTHCHECK_ENABLED:
+                dismiss_dialog(editor_page, 5000)
+                r = health_check(editor_page, tag)
+                healthy = report_health(tag, account, r)
+                log(tag, f"⏳ 停留 {STAY_SECONDS}s（记录活跃）...")
+                time.sleep(STAY_SECONDS)
+                log(tag, "✅ Done! Activity recorded.")
+            else:
+                healthy = True
+                log(tag, f"⏳ 停留 {STAY_SECONDS}s（记录活跃）...")
+                time.sleep(STAY_SECONDS)
+                log(tag, "✅ Done! Activity recorded.")
+
+            log(tag, f"=== 结束 {'✅' if healthy else '❌'} ===")
+            return healthy
+
+        except Exception as err:
+            log(tag, f"❌ {err}")
+            gh_summary(f"### [{tag}] ❌ 失败\n\n```\n{err}\n```\n")
+            return False
+        finally:
+            try:
+                browser.close()
+            except Exception:
+                pass
+
+
+def main() -> int:
+    accounts = parse_accounts()
+    log("MAIN", f"🚀 开始保活，共 {len(accounts)} 个账号（每 2 小时由 GitHub Actions 触发）")
+    results = []
+    for i, acc in enumerate(accounts):
+        try:
+            results.append(keepalive_one(acc, i))
+        except Exception as err:
+            log(f"Account{i + 1}", f"❌ 未捕获异常: {err}")
+            results.append(False)
+        if i < len(accounts) - 1:
+            time.sleep(5)
+
+    ok = sum(results)
+    log("MAIN", f"✅ 完成: {ok}/{len(results)} 个账号正常")
+    gh_summary(f"---\n**汇总: {ok}/{len(results)} 个账号正常**\n")
+    if not all(results) and FAIL_ON_UNHEALTHY:
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

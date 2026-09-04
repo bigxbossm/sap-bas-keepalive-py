@@ -1,0 +1,73 @@
+name: SAP BAS Keep Alive
+
+on:
+  schedule:
+    # 每 2 小时执行一次（UTC 0:00/2:00/... ，北京时间 8:00/10:00/...）
+    - cron: '0 */2 * * *'
+  workflow_dispatch:            # 支持手动触发测试
+
+concurrency:
+  group: bas-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Run BAS Keep Alive
+        env:
+          BAS_URL: ${{ secrets.BAS_URL }}
+          BTP_USER: ${{ secrets.BTP_USER }}
+          BTP_PASSWORD: ${{ secrets.BTP_PASSWORD }}
+          BAS_SPACE_NAME: ${{ secrets.BAS_SPACE_NAME }}
+          HEALTHCHECK_ENABLED: 'true'
+          AUTO_FIX: 'true'
+          FAIL_ON_UNHEALTHY: 'true'
+          STAY_SECONDS: '60'
+        run: python scripts/bas_keepalive.py
+
+      - name: Keep repo active (prevent GitHub disabling scheduled workflows)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "Last run: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > .last-run
+          git add .last-run
+          git diff --staged --quiet || git commit -m "chore: keepalive $(date -u '+%Y-%m-%d %H:%M')"
+          git pull --rebase origin ${{ github.ref_name }}
+          git push
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: keepalive
+    timeout-minutes: 60
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Delete completed workflow runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run list --repo ${{ github.repository }} --workflow "SAP BAS Keep Alive" --limit 1000 --json databaseId,status \
+            | jq -r '.[] | select(.status == "completed") | .databaseId' \
+            | while read -r id; do
+                echo "Deleting run $id"
+                gh run delete "$id" --repo ${{ github.repository }} || true
+                sleep 0.3
+              done
