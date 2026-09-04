@@ -60,6 +60,9 @@ Playwright 无头浏览器登录 BTP（多账号支持）
 | `BTP_USER` | BTP 登录邮箱 | `you@example.com` |
 | `BTP_PASSWORD` | BTP 登录密码 | `your-password` |
 | `BAS_SPACE_NAME` | Dev Space 名称（选填） | `boss` |
+| `TG_BOT_TOKEN` | Telegram Bot Token（选填，开启通知与截图推送） | `123456789:ABCdef...` |
+| `TG_CHAT_ID` | Telegram Chat ID（选填，通知接收对象） | `987654321` |
+| `TG_API_HOST` | Telegram 反代域名（选填，默认 `api.telegram.org`） | `api.telegram.org` |
 
 **多账号**：用 `;` 分隔，顺序一一对应：
 

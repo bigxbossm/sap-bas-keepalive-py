@@ -36,6 +36,9 @@ jobs:
           BTP_USER: ${{ secrets.BTP_USER }}
           BTP_PASSWORD: ${{ secrets.BTP_PASSWORD }}
           BAS_SPACE_NAME: ${{ secrets.BAS_SPACE_NAME }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          TG_API_HOST: ${{ secrets.TG_API_HOST }}
           HEALTHCHECK_ENABLED: 'true'
           AUTO_FIX: 'true'
           FAIL_ON_UNHEALTHY: 'true'

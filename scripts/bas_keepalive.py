@@ -28,10 +28,14 @@ SAP BAS Keep Alive + 健康检查
   FAIL_ON_UNHEALTHY  默认 true，健康检查失败时进程退出码非 0（Actions 标红）
 """
 
+import html
+import json
 import os
 import re
 import sys
 import time
+import urllib.request
+import uuid
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
@@ -113,6 +117,84 @@ def gh_summary(text: str) -> None:
                 f.write(text + "\n")
         except OSError:
             pass
+
+
+# ------------------------ Telegram 通知 ------------------------
+
+def send_telegram_notification(
+    title: str,
+    details: list,
+    photo_bytes: bytes = None,
+    is_success: bool = True,
+) -> bool:
+    """发送 Telegram 消息或截图通知（若未配置环境变量则静默跳过）。"""
+    token = os.environ.get("TG_BOT_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TG_CHAT_ID") or os.environ.get("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        return False
+
+    api_host = os.environ.get("TG_API_HOST") or os.environ.get("TELEGRAM_API_HOST") or "api.telegram.org"
+    api_host = api_host.strip().rstrip("/")
+    if not api_host.startswith("http://") and not api_host.startswith("https://"):
+        api_host = f"https://{api_host}"
+
+    icon = "✅" if is_success else "❌"
+    lines = [f"{icon} <b>{html.escape(title)}</b>", ""]
+    for label, val in details:
+        lines.append(f"<b>{html.escape(str(label))}</b>: <code>{html.escape(str(val))}</code>")
+    caption = "\n".join(lines)
+    if len(caption) > 1024:
+        caption = caption[:1020] + "..."
+
+    try:
+        if photo_bytes:
+            url = f"{api_host}/bot{token}/sendPhoto"
+            boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
+            body = bytearray()
+
+            def add_field(name: str, value: str):
+                body.extend(f"--{boundary}\r\n".encode("utf-8"))
+                body.extend(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode("utf-8"))
+                body.extend(f"{value}\r\n".encode("utf-8"))
+
+            add_field("chat_id", str(chat_id))
+            add_field("caption", caption)
+            add_field("parse_mode", "HTML")
+
+            body.extend(f"--{boundary}\r\n".encode("utf-8"))
+            body.extend(b'Content-Disposition: form-data; name="photo"; filename="screenshot.png"\r\n')
+            body.extend(b"Content-Type: image/png\r\n\r\n")
+            body.extend(photo_bytes)
+            body.extend(b"\r\n")
+            body.extend(f"--{boundary}--\r\n".encode("utf-8"))
+
+            req = urllib.request.Request(
+                url,
+                data=bytes(body),
+                headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+                method="POST",
+            )
+        else:
+            url = f"{api_host}/bot{token}/sendMessage"
+            payload = json.dumps({
+                "chat_id": str(chat_id),
+                "text": caption,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": True,
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            log("TG", f"Telegram 通知已发送 ({resp.status})")
+            return True
+    except Exception as exc:
+        log("TG", f"发送 Telegram 通知失败: {exc}")
+        return False
 
 
 # ------------------------ 页面查找辅助 ------------------------
@@ -543,16 +625,37 @@ def keepalive_one(account: dict, index: int) -> bool:
             viewport={"width": 1600, "height": 1000},
         )
         page = context.new_page()
+        active_page = page
+        login_screenshot = None
+        current_step = "初始化"
         try:
+            current_step = "登录 BTP"
             login(page, account["bas_url"], account["user"], account["password"])
             dismiss_dialog(page, 10000)
-            start_space_if_stopped(page, tag)
-            editor_page = enter_workspace(page, context, account["space"], tag)
 
+            # 登录成功，截取控制台/工作空间列表
+            try:
+                login_screenshot = page.screenshot(full_page=False)
+                log(tag, "📸 已截取登录成功控制台画面")
+            except Exception as e:
+                log(tag, f"截取登录成功图失败: {e}")
+
+            current_step = "启动 dev space"
+            start_space_if_stopped(page, tag)
+
+            current_step = "进入工作区"
+            editor_page = enter_workspace(page, context, account["space"], tag)
+            if editor_page:
+                active_page = editor_page
+
+            health_summary = "未启用"
             if HEALTHCHECK_ENABLED:
+                current_step = "应用健康检查"
                 dismiss_dialog(editor_page, 5000)
                 r = health_check(editor_page, tag)
                 healthy = report_health(tag, account, r)
+                ok_cnt = sum(1 for p in r["tasks"].values() if p is not None)
+                health_summary = f"{'✅ 正常' if healthy else '❌ 异常'} ({ok_cnt}/{len(r['tasks'])} 任务运行)"
                 log(tag, f"⏳ 停留 {STAY_SECONDS}s（记录活跃）...")
                 time.sleep(STAY_SECONDS)
                 log(tag, "✅ Done! Activity recorded.")
@@ -563,11 +666,52 @@ def keepalive_one(account: dict, index: int) -> bool:
                 log(tag, "✅ Done! Activity recorded.")
 
             log(tag, f"=== 结束 {'✅' if healthy else '❌'} ===")
+
+            # 优先使用编辑器/终端健康检查截图，若无则使用登录控制台截图
+            final_screenshot = None
+            try:
+                final_screenshot = active_page.screenshot(full_page=False)
+            except Exception:
+                final_screenshot = login_screenshot
+
+            send_telegram_notification(
+                title=f"[{tag}] SAP BAS 保活成功",
+                details=[
+                    ("账号", account["user"]),
+                    ("空间", account["space"] or "默认"),
+                    ("登录状态", "✅ 登录成功"),
+                    ("健康检查", health_summary),
+                    ("活跃状态", f"已停留 {STAY_SECONDS} 秒"),
+                ],
+                photo_bytes=final_screenshot or login_screenshot,
+                is_success=True,
+            )
             return healthy
 
         except Exception as err:
             log(tag, f"❌ {err}")
             gh_summary(f"### [{tag}] ❌ 失败\n\n```\n{err}\n```\n")
+
+            # 失败时立即截取当前活动页面现场
+            fail_screenshot = None
+            try:
+                if active_page:
+                    fail_screenshot = active_page.screenshot(full_page=False)
+                    log(tag, "📸 已截取失败现场画面")
+            except Exception as e:
+                log(tag, f"截取失败现场图失败: {e}")
+
+            send_telegram_notification(
+                title=f"[{tag}] SAP BAS 保活失败",
+                details=[
+                    ("账号", account["user"]),
+                    ("空间", account["space"] or "默认"),
+                    ("失败步骤", current_step),
+                    ("错误原因", str(err)[:200]),
+                ],
+                photo_bytes=fail_screenshot,
+                is_success=False,
+            )
             return False
         finally:
             try:
