@@ -45,6 +45,14 @@ jobs:
           STAY_SECONDS: '60'
         run: python scripts/bas_keepalive.py
 
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bas-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
+
       - name: Keep repo active (prevent GitHub disabling scheduled workflows)
         run: |
           git config user.name "github-actions[bot]"

@@ -442,25 +442,60 @@ def enter_workspace(page, context, space: str, tag: str):
 
     time.sleep(3)
 
-    def is_editor(url: str) -> bool:
+    def is_editor_url(url: str) -> bool:
         return "#ws-" in url
 
+    target_page = None
     deadline = time.time() + EDITOR_TIMEOUT_SEC
     while time.time() < deadline:
-        if is_editor(page.url):
-            log(tag, "✅ 编辑器已在当前页加载")
-            return page
+        if is_editor_url(page.url):
+            target_page = page
+            break
         for np in new_pages:
             try:
                 np.wait_for_load_state("domcontentloaded", timeout=3000)
             except Exception:
                 pass
-            if is_editor(np.url):
-                log(tag, "✅ 编辑器已在新标签页加载")
-                return np
+            if is_editor_url(np.url):
+                target_page = np
+                break
+        if target_page:
+            break
         dismiss_dialog(page, 2000)
-        time.sleep(5)
-    raise TimeoutError(f"{EDITOR_TIMEOUT_SEC}s 内编辑器未加载")
+        time.sleep(3)
+
+    if not target_page:
+        raise TimeoutError(f"{EDITOR_TIMEOUT_SEC}s 内编辑器未加载（未跳转 #ws-）")
+
+    log(tag, "⏳ 等待 IDE 工作区界面加载完成 ...")
+    ide_ready = False
+    ready_deadline = time.time() + EDITOR_TIMEOUT_SEC
+    while time.time() < ready_deadline:
+        dismiss_dialog(target_page, 2000)
+        dismiss_ide_notifications(target_page)
+        for frame in iter_frames(target_page):
+            try:
+                if (
+                    frame.get_by_text("Terminal", exact=True).count() > 0
+                    or frame.locator("textarea.xterm-helper-textarea").count() > 0
+                    or frame.locator('div[role="menubar"]').count() > 0
+                    or frame.locator(".theia-ApplicationShell").count() > 0
+                    or frame.locator(".monaco-workbench").count() > 0
+                ):
+                    ide_ready = True
+                    break
+            except Exception:
+                continue
+        if ide_ready:
+            break
+        time.sleep(3)
+
+    if ide_ready:
+        log(tag, "✅ IDE 工作区已完全加载")
+    else:
+        log(tag, "⚠️ 达到超时未检测到标准 IDE 标记，继续尝试交互")
+
+    return target_page
 
 
 # ------------------------- 健康检查 -------------------------
@@ -480,15 +515,78 @@ def read_terminal_text(page) -> str:
 
 
 def ensure_terminal(page, tag: str):
-    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 20000)
-    if not ta:
-        log(tag, "未检测到终端，尝试创建（Ctrl+`）...")
-        page.keyboard.press("Control+`")
-        time.sleep(2)
-        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 15000)
-    if not ta:
-        click_if_found(page, ['button[title*="New Terminal"]'], 5000)
-        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 15000)
+    # 1. 若已有终端输入框，直接返回
+    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
+    if ta:
+        try:
+            ta.click()
+        except Exception:
+            pass
+        return ta
+
+    log(tag, "未检测到现有终端，尝试创建 ...")
+
+    # 2. 依次尝试点击顶部菜单栏中的 "Terminal" -> "New Terminal"
+    for frame in iter_frames(page):
+        try:
+            term_menu = frame.get_by_text("Terminal", exact=True).first
+            if term_menu.count() > 0 and term_menu.is_visible():
+                term_menu.click()
+                time.sleep(1)
+                new_term = frame.get_by_text("New Terminal", exact=False).first
+                if new_term.count() > 0 and new_term.is_visible():
+                    new_term.click()
+                    log(tag, "已通过 Terminal 菜单创建终端")
+                    time.sleep(3)
+                    break
+        except Exception:
+            continue
+
+    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
+    if ta:
+        try:
+            ta.click()
+        except Exception:
+            pass
+        return ta
+
+    # 3. 快捷键尝试：Ctrl+` 与 Ctrl+Backquote
+    for key in ("Control+Backquote", "Control+`"):
+        try:
+            page.keyboard.press(key)
+            time.sleep(2)
+            ta = find_in_frames(page, "textarea.xterm-helper-textarea", 4000)
+            if ta:
+                ta.click()
+                return ta
+        except Exception:
+            pass
+
+    # 4. Command Palette (F1)
+    try:
+        page.keyboard.press("F1")
+        time.sleep(1)
+        page.keyboard.type("Terminal: Create New Terminal", delay=30)
+        page.keyboard.press("Enter")
+        time.sleep(3)
+        ta = find_in_frames(page, "textarea.xterm-helper-textarea", 5000)
+        if ta:
+            ta.click()
+            return ta
+    except Exception:
+        pass
+
+    # 5. 按钮匹配回退
+    click_if_found(
+        page,
+        [
+            'button[title*="New Terminal"]',
+            'button[aria-label*="New Terminal"]',
+            'a[title*="New Terminal"]',
+        ],
+        5000,
+    )
+    ta = find_in_frames(page, "textarea.xterm-helper-textarea", 10000)
     if not ta:
         raise RuntimeError("无法定位终端（xterm textarea）")
     try:
@@ -637,6 +735,9 @@ def keepalive_one(account: dict, index: int) -> bool:
             try:
                 login_screenshot = page.screenshot(full_page=False)
                 log(tag, "📸 已截取登录成功控制台画面")
+                os.makedirs("screenshots", exist_ok=True)
+                with open(f"screenshots/{tag}_login.png", "wb") as f:
+                    f.write(login_screenshot)
             except Exception as e:
                 log(tag, f"截取登录成功图失败: {e}")
 
@@ -674,6 +775,14 @@ def keepalive_one(account: dict, index: int) -> bool:
             except Exception:
                 final_screenshot = login_screenshot
 
+            if final_screenshot or login_screenshot:
+                try:
+                    os.makedirs("screenshots", exist_ok=True)
+                    with open(f"screenshots/{tag}_success.png", "wb") as f:
+                        f.write(final_screenshot or login_screenshot)
+                except Exception:
+                    pass
+
             send_telegram_notification(
                 title=f"[{tag}] SAP BAS 保活成功",
                 details=[
@@ -698,6 +807,9 @@ def keepalive_one(account: dict, index: int) -> bool:
                 if active_page:
                     fail_screenshot = active_page.screenshot(full_page=False)
                     log(tag, "📸 已截取失败现场画面")
+                    os.makedirs("screenshots", exist_ok=True)
+                    with open(f"screenshots/{tag}_failed.png", "wb") as f:
+                        f.write(fail_screenshot)
             except Exception as e:
                 log(tag, f"截取失败现场图失败: {e}")
 
