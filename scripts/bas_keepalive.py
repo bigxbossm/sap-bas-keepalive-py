@@ -373,27 +373,35 @@ def login(page, bas_url: str, user: str, password: str) -> None:
 
 # ---------------------- dev space 状态管理 ----------------------
 
-STATUS_RE = re.compile(r"^(RUNNING|STOPPED|STARTING|STOPPING)$", re.I)
+STATUS_RE = re.compile(r"\b(RUNNING|STOPPED|STARTING|STOPPING)\b", re.I)
 
 
 def read_space_status(page) -> str:
     """读取 dev space 状态：优先状态文本，回退到参考项目的 CSS 类选择器。"""
     for frame in iter_frames(page):
         try:
-            els = frame.get_by_text(STATUS_RE)
-            for el in els.all():
-                t = (el.inner_text() or "").strip().upper()
-                if t in ("RUNNING", "STOPPED", "STARTING", "STOPPING"):
-                    return t
+            for kw in ("RUNNING", "STOPPED", "STARTING", "STOPPING"):
+                loc = frame.get_by_text(re.compile(rf"\b{kw}\b", re.I))
+                if loc.count() > 0:
+                    for i in range(min(loc.count(), 3)):
+                        el = loc.nth(i)
+                        if el.is_visible():
+                            t = (el.inner_text() or "").strip().upper()
+                            m = re.search(r"\b(RUNNING|STOPPED|STARTING|STOPPING)\b", t)
+                            if m:
+                                return m.group(1)
         except Exception:
             continue
-    # 回退：参考项目 bas-login.js 的选择器
+
+    # 回退：参考项目选择器与卡片超链接状态
     for frame in iter_frames(page):
         try:
-            if frame.locator("a.stoppedStatus").count() > 0:
+            if frame.locator("a.stoppedStatus, .status-stopped, .stopped").count() > 0:
                 return "STOPPED"
-            if frame.locator("a.hyperlink:not(.disabled)").count() > 0:
+            if frame.locator("a.hyperlink:not(.disabled)[href*='#ws-']").count() > 0:
                 return "RUNNING"
+            if frame.locator("[aria-label*='Starting'], .starting").count() > 0:
+                return "STARTING"
         except Exception:
             continue
     return "UNKNOWN"
@@ -416,37 +424,69 @@ def start_space_if_stopped(page, tag: str, initial_status: str = None) -> None:
     status = initial_status or wait_dev_spaces_loaded(page, tag)
     log(tag, f"📊 dev space 状态: {status}")
 
-    if status in ("RUNNING", "STARTING"):
+    if status == "RUNNING":
         return
 
-    log(tag, "▶️ dev space 未运行，点击启动 ...")
-    started = click_if_found(
-        page,
-        [
-            "#startButton0",
-            'button[title*="Start"]',
-            'button[aria-label*="Start"]',
-            'a[title*="Start"]',
-        ],
-        8000,
-    )
-    if not started:
-        raise RuntimeError("未找到启动按钮（页面结构可能已变化）")
-    log(tag, "✅ 已点击启动，等待 RUNNING ...")
+    if status != "STARTING":
+        log(tag, "▶️ dev space 未运行，点击启动 ...")
+        started = click_if_found(
+            page,
+            [
+                'button[title*="Start Dev Space"]',
+                'button[aria-label*="Start Dev Space"]',
+                'button[title*="Start"]',
+                'button[aria-label*="Start"]',
+                'button:has-text("Start")',
+                "#startButton0",
+                'a[title*="Start"]',
+            ],
+            6000,
+        )
+        if not started:
+            # 尝试通过卡片查找启动按钮
+            for frame in iter_frames(page):
+                try:
+                    for card_sel in ['div.card', 'div[class*="Card"]', 'div[class*="dev-space"]']:
+                        cards = frame.locator(card_sel)
+                        if cards.count() > 0:
+                            first_btn = cards.first.locator("button").first
+                            if first_btn and first_btn.is_visible():
+                                first_btn.click()
+                                started = True
+                                log(tag, "已通过卡片首个按钮点击启动")
+                                break
+                    if started:
+                        break
+                except Exception:
+                    continue
+
+        if not started:
+            raise RuntimeError("未找到启动按钮（页面结构可能已变化）")
+        log(tag, "✅ 已点击启动，等待 RUNNING ...")
 
     deadline = time.time() + START_TIMEOUT_SEC
+    last_reload = time.time()
     while time.time() < deadline:
-        time.sleep(10)
-        try:
-            page.reload(wait_until="domcontentloaded", timeout=30000)
-        except Exception:
-            pass
-        dismiss_dialog(page, 3000)
+        time.sleep(5)
+        dismiss_dialog(page, 1500)
         status = read_space_status(page)
-        log(tag, f"   等待中... 剩余 {int(deadline - time.time())}s，当前 {status}")
+        remaining = int(deadline - time.time())
+        log(tag, f"   等待中... 剩余 {remaining}s，当前 {status}")
         if status == "RUNNING":
             log(tag, "✅ dev space 已 RUNNING")
+            time.sleep(2)
             return
+
+        # 仅当长时间（超过 60s）持续为 UNKNOWN 时才进行单次页面重载并等待重新渲染
+        if status == "UNKNOWN" and (time.time() - last_reload > 60):
+            log(tag, "⚠️ 状态读取异常，重新加载控制台页面...")
+            try:
+                page.reload(wait_until="domcontentloaded", timeout=25000)
+            except Exception:
+                pass
+            last_reload = time.time()
+            wait_dev_spaces_loaded(page, tag, timeout_sec=25)
+
     raise TimeoutError(f"{START_TIMEOUT_SEC}s 内 dev space 未达到 RUNNING")
 
 
