@@ -373,27 +373,41 @@ def login(page, bas_url: str, user: str, password: str) -> None:
 
 # ---------------------- dev space 状态管理 ----------------------
 
-STATUS_RE = re.compile(r"\b(RUNNING|STOPPED|STARTING|STOPPING)\b", re.I)
+STATUS_RE = re.compile(r"^\s*(RUNNING|STOPPED|STARTING|STOPPING)\s*$", re.I)
 
 
-def read_space_status(page) -> str:
-    """读取 dev space 状态：优先状态文本，回退到参考项目的 CSS 类选择器。"""
+def read_space_status(page, space_name: str = None) -> str:
+    """读取 dev space 状态：严格精确匹配状态文本与标志位，杜绝误匹配页面提示横幅。"""
     for frame in iter_frames(page):
+        # 1. 优先在包含 space_name 的卡片/行内查找精确状态
+        if space_name:
+            try:
+                for container_sel in ["tr", "div.card", "div[class*='Card']", "div[class*='card']", "div[class*='devSpace']", "div[class*='dev-space']"]:
+                    containers = frame.locator(container_sel)
+                    for i in range(min(containers.count(), 10)):
+                        c = containers.nth(i)
+                        if c.get_by_text(space_name, exact=False).count() > 0:
+                            for kw in ("STOPPED", "STARTING", "STOPPING", "RUNNING"):
+                                m = c.get_by_text(re.compile(rf"^\s*{kw}\s*$", re.I))
+                                if m.count() > 0 and m.first.is_visible():
+                                    return kw
+            except Exception:
+                pass
+
+        # 2. 精确匹配独立状态文本节点（严格 ^\s*STATUS\s*$，完全排斥包含 running 单词的长句子横幅）
         try:
-            for kw in ("RUNNING", "STOPPED", "STARTING", "STOPPING"):
-                loc = frame.get_by_text(re.compile(rf"\b{kw}\b", re.I))
-                if loc.count() > 0:
-                    for i in range(min(loc.count(), 3)):
-                        el = loc.nth(i)
-                        if el.is_visible():
-                            t = (el.inner_text() or "").strip().upper()
-                            m = re.search(r"\b(RUNNING|STOPPED|STARTING|STOPPING)\b", t)
-                            if m:
-                                return m.group(1)
+            for kw in ("STOPPED", "STARTING", "STOPPING", "RUNNING"):
+                loc = frame.get_by_text(re.compile(rf"^\s*{kw}\s*$", re.I))
+                for i in range(min(loc.count(), 5)):
+                    el = loc.nth(i)
+                    if el.is_visible():
+                        t = (el.inner_text() or "").strip().upper()
+                        if t in ("RUNNING", "STOPPED", "STARTING", "STOPPING"):
+                            return t
         except Exception:
             continue
 
-    # 回退：参考项目选择器与卡片超链接状态
+    # 3. 回退：参考项目选择器与卡片超链接状态
     for frame in iter_frames(page):
         try:
             if frame.locator("a.stoppedStatus, .status-stopped, .stopped").count() > 0:
@@ -407,21 +421,21 @@ def read_space_status(page) -> str:
     return "UNKNOWN"
 
 
-def wait_dev_spaces_loaded(page, tag: str, timeout_sec: int = 45) -> str:
+def wait_dev_spaces_loaded(page, tag: str, timeout_sec: int = 45, space_name: str = None) -> str:
     """等待 BAS 空间控制台加载完毕，返回当前状态。"""
     log(tag, "⏳ 等待 dev space 列表加载完成 ...")
     deadline = time.time() + timeout_sec
     while time.time() < deadline:
         dismiss_dialog(page, 1500)
-        status = read_space_status(page)
+        status = read_space_status(page, space_name=space_name)
         if status in ("RUNNING", "STOPPED", "STARTING", "STOPPING"):
             return status
         time.sleep(2)
-    return read_space_status(page)
+    return read_space_status(page, space_name=space_name)
 
 
-def start_space_if_stopped(page, tag: str, initial_status: str = None) -> None:
-    status = initial_status or wait_dev_spaces_loaded(page, tag)
+def start_space_if_stopped(page, tag: str, initial_status: str = None, space_name: str = None) -> None:
+    status = initial_status or wait_dev_spaces_loaded(page, tag, space_name=space_name)
     log(tag, f"📊 dev space 状态: {status}")
 
     if status == "RUNNING":
@@ -442,8 +456,28 @@ def start_space_if_stopped(page, tag: str, initial_status: str = None) -> None:
             ],
             6000,
         )
+        if not started and space_name:
+            # 尝试通过所属空间卡片查找启动按钮
+            for frame in iter_frames(page):
+                try:
+                    for card_sel in ["tr", "div.card", "div[class*='Card']", "div[class*='card']", "div[class*='devSpace']", "div[class*='dev-space']"]:
+                        cards = frame.locator(card_sel)
+                        for i in range(min(cards.count(), 10)):
+                            c = cards.nth(i)
+                            if c.get_by_text(space_name, exact=False).count() > 0:
+                                btn = c.locator('button[title*="Start"], button[aria-label*="Start"], button').first
+                                if btn and btn.is_visible():
+                                    btn.click()
+                                    started = True
+                                    log(tag, "已通过所属空间卡片点击启动按钮")
+                                    break
+                        if started:
+                            break
+                except Exception:
+                    continue
+
         if not started:
-            # 尝试通过卡片查找启动按钮
+            # 尝试通过卡片首个按钮点击启动
             for frame in iter_frames(page):
                 try:
                     for card_sel in ['div.card', 'div[class*="Card"]', 'div[class*="dev-space"]']:
@@ -469,7 +503,7 @@ def start_space_if_stopped(page, tag: str, initial_status: str = None) -> None:
     while time.time() < deadline:
         time.sleep(5)
         dismiss_dialog(page, 1500)
-        status = read_space_status(page)
+        status = read_space_status(page, space_name=space_name)
         remaining = int(deadline - time.time())
         log(tag, f"   等待中... 剩余 {remaining}s，当前 {status}")
         if status == "RUNNING":
@@ -485,7 +519,7 @@ def start_space_if_stopped(page, tag: str, initial_status: str = None) -> None:
             except Exception:
                 pass
             last_reload = time.time()
-            wait_dev_spaces_loaded(page, tag, timeout_sec=25)
+            wait_dev_spaces_loaded(page, tag, timeout_sec=25, space_name=space_name)
 
     raise TimeoutError(f"{START_TIMEOUT_SEC}s 内 dev space 未达到 RUNNING")
 
@@ -497,21 +531,31 @@ def enter_workspace(page, context, space: str, tag: str):
     context.on("page", lambda p: new_pages.append(p))
 
     link = None
-    for frame in iter_frames(page):
-        try:
-            cand = frame.locator('a.hyperlink:not(.disabled)[href*="#ws-"]').first
-            if cand.count() > 0:
-                link = cand
-                break
-            if space:
-                cand = frame.locator(
-                    f'a.hyperlink:not(.disabled):has-text("{space}")'
-                ).first
-                if cand.count() > 0:
+    link_deadline = time.time() + 15
+    while time.time() < link_deadline:
+        for frame in iter_frames(page):
+            try:
+                cand = frame.locator('a.hyperlink:not(.disabled)[href*="#ws-"]').first
+                if cand.count() > 0 and cand.is_visible():
                     link = cand
                     break
-        except Exception:
-            continue
+                if space:
+                    cand = frame.locator(
+                        f'a.hyperlink:not(.disabled):has-text("{space}"), a:not(.disabled)[href*="#ws-"]:has-text("{space}")'
+                    ).first
+                    if cand.count() > 0 and cand.is_visible():
+                        link = cand
+                        break
+                    cand = frame.locator(f'a:not(.disabled):has-text("{space}")').first
+                    if cand.count() > 0 and cand.is_visible():
+                        link = cand
+                        break
+            except Exception:
+                continue
+        if link:
+            break
+        time.sleep(2)
+
     if link:
         link.click()
     else:
@@ -1041,7 +1085,8 @@ def keepalive_one(account: dict, index: int) -> bool:
             dismiss_dialog(page, 10000)
 
             # 等待空间卡片加载完成，确保截取到完整的空间卡片画面
-            status = wait_dev_spaces_loaded(page, tag)
+            space_name = account.get("space")
+            status = wait_dev_spaces_loaded(page, tag, space_name=space_name)
 
             # 登录成功，截取控制台/工作空间列表
             try:
@@ -1054,7 +1099,7 @@ def keepalive_one(account: dict, index: int) -> bool:
                 log(tag, f"截取登录成功图失败: {e}")
 
             current_step = "启动 dev space"
-            start_space_if_stopped(page, tag, initial_status=status)
+            start_space_if_stopped(page, tag, initial_status=status, space_name=space_name)
 
             current_step = "进入工作区"
             editor_page = enter_workspace(page, context, account["space"], tag)
