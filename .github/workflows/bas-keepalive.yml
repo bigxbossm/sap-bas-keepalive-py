@@ -2,9 +2,9 @@ name: SAP BAS Keep Alive
 
 on:
   schedule:
-    # 每 2 小时执行一次（UTC 0:00/2:00/... ，北京时间 8:00/10:00/...）
-    - cron: '0 */2 * * *'
-  workflow_dispatch:            # 支持手动触发测试
+    # 间隔 1 小时非整点执行一次（每小时第 23 分钟，避开 GitHub 整点排队拥堵）
+    - cron: '23 * * * *'
+  workflow_dispatch:            # 支持手动及外部 API 触发
 
 concurrency:
   group: bas-keepalive
