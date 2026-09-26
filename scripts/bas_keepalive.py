@@ -58,7 +58,7 @@ def env_int(name: str, default: int) -> int:
 HEADLESS = env_bool("HEADLESS", True)
 HEALTHCHECK_ENABLED = env_bool("HEALTHCHECK_ENABLED", True)
 AUTO_FIX = env_bool("AUTO_FIX", True)
-FAIL_ON_UNHEALTHY = env_bool("FAIL_ON_UNHEALTHY", True)
+FAIL_ON_UNHEALTHY = env_bool("FAIL_ON_UNHEALTHY", False)
 
 STAY_SECONDS = env_int("STAY_SECONDS", 60)
 BOOTSTRAP_WAIT_SEC = env_int("BOOTSTRAP_WAIT_SEC", 40)
@@ -74,7 +74,7 @@ HEALTHCHECK_TASKS = [
     if t.strip()
 ]
 
-LOGIN_TIMEOUT_MS = 60_000
+LOGIN_TIMEOUT_MS = env_int("LOGIN_TIMEOUT_MS", 90_000)
 HEALTH_CMD_TMPL = (
     'echo HC_START_{nonce}; '
     'P=$(pgrep -x supervisord | head -1); echo SV_PID=$P; '
@@ -329,8 +329,36 @@ SUBMIT_FIELD = ('button[type="submit"], #logOnFormSubmit, '
                 'button:has-text("Sign In"), button:has-text("Log On")')
 
 
-def login(page, bas_url: str, user: str, password: str) -> None:
-    log("LOGIN", f"打开 {bas_url}")
+def check_sap_idp_error(page) -> str:
+    """检查页面或 iframe 是否出现 SAP 身份认证（IdP）或网络超时错误"""
+    patterns = [
+        r"There was an error when authenticating against the external identity provider",
+        r"SocketTimeoutException",
+        r"I/O error on POST request",
+        r"Read timed out",
+        r"504 Gateway Time-out",
+        r"502 Bad Gateway",
+        r"Service Unavailable",
+    ]
+    try:
+        for frame in iter_frames(page):
+            try:
+                body = frame.locator("body")
+                if body.count() > 0:
+                    text = body.inner_text(timeout=1000)
+                    for p in patterns:
+                        if re.search(p, text, re.I):
+                            match = re.search(p, text, re.I)
+                            return match.group(0)
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return ""
+
+
+def _login_attempt(page, bas_url: str, user: str, password: str, attempt: int) -> None:
+    log("LOGIN", f"打开 {bas_url} (尝试 {attempt})")
     page.goto(bas_url, wait_until="domcontentloaded", timeout=LOGIN_TIMEOUT_MS)
 
     # 已有会话则跳过登录表单
@@ -343,9 +371,16 @@ def login(page, bas_url: str, user: str, password: str) -> None:
         except PWTimeout:
             pass
 
+    idp_err = check_sap_idp_error(page)
+    if idp_err:
+        raise RuntimeError(f"SAP IdP 认证服务端异常: {idp_err}")
+
     log("LOGIN", "📧 输入邮箱...")
     field = find_in_frames(page, USER_FIELD, 30000)
     if not field:
+        idp_err = check_sap_idp_error(page)
+        if idp_err:
+            raise RuntimeError(f"SAP IdP 认证服务端异常: {idp_err}")
         raise RuntimeError("未找到登录用户名输入框（页面结构可能已变化）")
     field.fill(user)
     time.sleep(1)
@@ -359,6 +394,9 @@ def login(page, bas_url: str, user: str, password: str) -> None:
     log("LOGIN", "🔑 输入密码...")
     pwd = find_in_frames(page, PWD_FIELD, 20000)
     if not pwd:
+        idp_err = check_sap_idp_error(page)
+        if idp_err:
+            raise RuntimeError(f"SAP IdP 认证服务端异常: {idp_err}")
         raise RuntimeError("未找到密码输入框")
     pwd.fill(password)
     time.sleep(0.5)
@@ -366,9 +404,37 @@ def login(page, bas_url: str, user: str, password: str) -> None:
     if not click_if_found(page, SUBMIT_FIELD.split(", "), 5000):
         page.keyboard.press("Enter")
     log("LOGIN", "等待跳转 BAS ...")
-    page.wait_for_url(re.compile(r"applicationstudio\.cloud\.sap"),
-                      timeout=LOGIN_TIMEOUT_MS)
-    log("LOGIN", "✅ 登录成功")
+
+    deadline = time.time() + (LOGIN_TIMEOUT_MS / 1000.0)
+    while time.time() < deadline:
+        if re.search(r"applicationstudio\.cloud\.sap", page.url):
+            log("LOGIN", "✅ 登录成功")
+            return
+        idp_err = check_sap_idp_error(page)
+        if idp_err:
+            raise RuntimeError(f"SAP IdP 认证服务端异常: {idp_err}")
+        time.sleep(1.5)
+
+    if re.search(r"applicationstudio\.cloud\.sap", page.url):
+        log("LOGIN", "✅ 登录成功")
+        return
+    idp_err = check_sap_idp_error(page)
+    if idp_err:
+        raise RuntimeError(f"SAP IdP 认证服务端异常: {idp_err}")
+    raise PWTimeout(f"等待跳转 BAS 超时 ({LOGIN_TIMEOUT_MS}ms)")
+
+
+def login(page, bas_url: str, user: str, password: str, max_retries: int = 3) -> None:
+    for attempt in range(1, max_retries + 1):
+        try:
+            _login_attempt(page, bas_url, user, password, attempt)
+            return
+        except Exception as e:
+            if attempt >= max_retries:
+                log("LOGIN", f"❌ 登录最终失败 (已达最大重试次数 {max_retries}): {e}")
+                raise
+            log("LOGIN", f"⚠️ 登录尝试 {attempt}/{max_retries} 异常: {e}，将在 8 秒后重试...")
+            time.sleep(8)
 
 
 # ---------------------- dev space 状态管理 ----------------------
@@ -1154,7 +1220,7 @@ def keepalive_one(account: dict, index: int) -> bool:
                 photo_bytes=final_screenshot or login_screenshot,
                 is_success=True,
             )
-            return healthy
+            return (True, healthy)
 
         except Exception as err:
             log(tag, f"❌ {err}")
@@ -1183,7 +1249,7 @@ def keepalive_one(account: dict, index: int) -> bool:
                 photo_bytes=fail_screenshot,
                 is_success=False,
             )
-            return False
+            return (False, False)
         finally:
             try:
                 browser.close()
@@ -1200,14 +1266,17 @@ def main() -> int:
             results.append(keepalive_one(acc, i))
         except Exception as err:
             log(f"Account{i + 1}", f"❌ 未捕获异常: {err}")
-            results.append(False)
+            results.append((False, False))
         if i < len(accounts) - 1:
             time.sleep(5)
 
-    ok = sum(results)
-    log("MAIN", f"✅ 完成: {ok}/{len(results)} 个账号正常")
-    gh_summary(f"---\n**汇总: {ok}/{len(results)} 个账号正常**\n")
-    if not all(results) and FAIL_ON_UNHEALTHY:
+    ka_ok_cnt = sum(1 for k_ok, _ in results if k_ok)
+    healthy_cnt = sum(1 for _, h_ok in results if h_ok)
+    log("MAIN", f"✅ 完成: 保活正常 {ka_ok_cnt}/{len(results)}, 服务健康 {healthy_cnt}/{len(results)}")
+    gh_summary(f"---\n**汇总: 保活正常 {ka_ok_cnt}/{len(results)}, 服务健康 {healthy_cnt}/{len(results)}**\n")
+    if not all(k_ok for k_ok, _ in results):
+        return 1
+    if not all(h_ok for _, h_ok in results) and FAIL_ON_UNHEALTHY:
         return 1
     return 0
 

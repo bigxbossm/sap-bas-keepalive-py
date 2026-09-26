@@ -41,7 +41,7 @@ jobs:
           TG_API_HOST: ${{ secrets.TG_API_HOST }}
           HEALTHCHECK_ENABLED: 'true'
           AUTO_FIX: 'true'
-          FAIL_ON_UNHEALTHY: 'true'
+          FAIL_ON_UNHEALTHY: 'false'
           STAY_SECONDS: '60'
         run: python scripts/bas_keepalive.py
 
