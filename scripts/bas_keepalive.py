@@ -77,9 +77,18 @@ HEALTHCHECK_TASKS = [
 LOGIN_TIMEOUT_MS = env_int("LOGIN_TIMEOUT_MS", 90_000)
 HEALTH_CMD_TMPL = (
     'echo HC_START_{nonce}; '
+    'if [ -f {conf} ]; then '
+    'echo HC_MODE=supervisor; '
     'P=$(pgrep -x supervisord | head -1); echo SV_PID=$P; '
     'test -f /tmp/.sv-bootstrapped && echo MARKER=EXISTS || echo MARKER=MISSING; '
     'supervisorctl -c {conf} status 2>&1; '
+    'else '
+    'echo HC_MODE=process; echo SV_PID=0; echo MARKER=EXISTS; '
+    'for t in {tasks_space}; do '
+    'p=$(pgrep -x "$t" | head -1); '
+    'if [ -n "$p" ]; then echo "$t RUNNING pid $p"; else echo "$t STOPPED"; fi; '
+    'done; '
+    'fi; '
     'echo HC_END_{nonce}'
 )
 
@@ -329,17 +338,12 @@ SUBMIT_FIELD = ('button[type="submit"], #logOnFormSubmit, '
                 'button:has-text("Sign In"), button:has-text("Log On")')
 
 
-def check_sap_idp_error(page) -> str:
-    """检查页面或 iframe 是否出现 SAP 身份认证（IdP）或网络超时错误"""
-    patterns = [
-        r"There was an error when authenticating against the external identity provider",
-        r"SocketTimeoutException",
-        r"I/O error on POST request",
-        r"Read timed out",
-        r"504 Gateway Time-out",
-        r"502 Bad Gateway",
-        r"Service Unavailable",
-    ]
+class AccountInvalidError(RuntimeError):
+    """BAS 账号已过期、删除或 URL 无效（不可通过重试恢复）。"""
+
+
+def check_page_text_patterns(page, patterns: list[str]) -> str:
+    """检查页面或 iframe 是否包含指定错误文本模式。"""
     try:
         for frame in iter_frames(page):
             try:
@@ -347,8 +351,8 @@ def check_sap_idp_error(page) -> str:
                 if body.count() > 0:
                     text = body.inner_text(timeout=1000)
                     for p in patterns:
-                        if re.search(p, text, re.I):
-                            match = re.search(p, text, re.I)
+                        match = re.search(p, text, re.I)
+                        if match:
                             return match.group(0)
             except Exception:
                 pass
@@ -357,15 +361,47 @@ def check_sap_idp_error(page) -> str:
     return ""
 
 
+def check_account_invalid_error(page) -> str:
+    """检查页面是否提示账号已过期、已删除或 URL 无效。"""
+    return check_page_text_patterns(page, [
+        r"The URL does not reference a valid account",
+        r"Check whether the account is expired or was deleted",
+        r"account is expired or was deleted",
+    ])
+
+
+def check_sap_idp_error(page) -> str:
+    """检查页面或 iframe 是否出现 SAP 身份认证（IdP）或网络超时错误"""
+    return check_page_text_patterns(page, [
+        r"There was an error when authenticating against the external identity provider",
+        r"SocketTimeoutException",
+        r"I/O error on POST request",
+        r"Read timed out",
+        r"504 Gateway Time-out",
+        r"502 Bad Gateway",
+        r"Service Unavailable",
+    ])
+
+
 def _login_attempt(page, bas_url: str, user: str, password: str, attempt: int) -> None:
     log("LOGIN", f"打开 {bas_url} (尝试 {attempt})")
     page.goto(bas_url, wait_until="domcontentloaded", timeout=LOGIN_TIMEOUT_MS)
 
+    acc_err = check_account_invalid_error(page)
+    if acc_err:
+        raise AccountInvalidError(f"BAS 账号或 URL 已失效: {acc_err}")
+
     # 已有会话则跳过登录表单
     if find_in_frames(page, USER_FIELD, 8000) is None:
+        acc_err = check_account_invalid_error(page)
+        if acc_err:
+            raise AccountInvalidError(f"BAS 账号或 URL 已失效: {acc_err}")
         try:
             page.wait_for_url(re.compile(r"applicationstudio\.cloud\.sap"),
                               timeout=15000)
+            acc_err = check_account_invalid_error(page)
+            if acc_err:
+                raise AccountInvalidError(f"BAS 账号或 URL 已失效: {acc_err}")
             log("LOGIN", "✅ 已存在会话，免登录")
             return
         except PWTimeout:
@@ -378,6 +414,9 @@ def _login_attempt(page, bas_url: str, user: str, password: str, attempt: int) -
     log("LOGIN", "📧 输入邮箱...")
     field = find_in_frames(page, USER_FIELD, 30000)
     if not field:
+        acc_err = check_account_invalid_error(page)
+        if acc_err:
+            raise AccountInvalidError(f"BAS 账号或 URL 已失效: {acc_err}")
         idp_err = check_sap_idp_error(page)
         if idp_err:
             raise RuntimeError(f"SAP IdP 认证服务端异常: {idp_err}")
@@ -407,6 +446,9 @@ def _login_attempt(page, bas_url: str, user: str, password: str, attempt: int) -
 
     deadline = time.time() + (LOGIN_TIMEOUT_MS / 1000.0)
     while time.time() < deadline:
+        acc_err = check_account_invalid_error(page)
+        if acc_err:
+            raise AccountInvalidError(f"BAS 账号或 URL 已失效: {acc_err}")
         if re.search(r"applicationstudio\.cloud\.sap", page.url):
             log("LOGIN", "✅ 登录成功")
             return
@@ -415,6 +457,9 @@ def _login_attempt(page, bas_url: str, user: str, password: str, attempt: int) -
             raise RuntimeError(f"SAP IdP 认证服务端异常: {idp_err}")
         time.sleep(1.5)
 
+    acc_err = check_account_invalid_error(page)
+    if acc_err:
+        raise AccountInvalidError(f"BAS 账号或 URL 已失效: {acc_err}")
     if re.search(r"applicationstudio\.cloud\.sap", page.url):
         log("LOGIN", "✅ 登录成功")
         return
@@ -429,6 +474,9 @@ def login(page, bas_url: str, user: str, password: str, max_retries: int = 3) ->
         try:
             _login_attempt(page, bas_url, user, password, attempt)
             return
+        except AccountInvalidError as e:
+            log("LOGIN", f"❌ {e}")
+            raise
         except Exception as e:
             if attempt >= max_retries:
                 log("LOGIN", f"❌ 登录最终失败 (已达最大重试次数 {max_retries}): {e}")
@@ -1001,15 +1049,16 @@ def paste_command(page, cmd: str, ta=None) -> bool:
 
 
 def health_check(editor_page, tag: str) -> dict:
-    """在 IDE 终端执行 supervisord 状态查询并断言。"""
+    """在 IDE 终端执行服务状态查询（兼容 supervisord 与直检进程模式）并断言。"""
     result = {
+        "mode": "supervisor",
         "sv_pid": None,
         "marker": None,
         "tasks": {t: None for t in HEALTHCHECK_TASKS},
         "raw": "",
     }
 
-    log(tag, "⏳ 等待 .bashrc 钩子引导 supervisord ...")
+    log(tag, "⏳ 等待终端启动钩子引导后台服务 ...")
     time.sleep(BOOTSTRAP_WAIT_SEC)
     dismiss_ide_notifications(editor_page)
 
@@ -1018,7 +1067,8 @@ def health_check(editor_page, tag: str) -> dict:
     start_tag = f"HC_START_{nonce}"
     end_tag = f"HC_END_{nonce}"
 
-    cmd = HEALTH_CMD_TMPL.format(conf=SUPERVISOR_CONF, nonce=nonce)
+    tasks_space = " ".join(HEALTHCHECK_TASKS)
+    cmd = HEALTH_CMD_TMPL.format(conf=SUPERVISOR_CONF, nonce=nonce, tasks_space=tasks_space)
     log(tag, f"注入健康检查命令 (nonce={nonce}) ...")
     if not paste_command(editor_page, cmd, ta):
         raise RuntimeError("终端命令注入失败")
@@ -1045,6 +1095,7 @@ def health_check(editor_page, tag: str) -> dict:
     if not text:
         raise RuntimeError("健康检查命令未生成有效回显（未能定位执行标识）")
 
+    result["mode"] = "process" if "HC_MODE=process" in text else "supervisor"
     m = re.search(r"SV_PID=(\d+)", text) or re.search(r"SV-PID=(\d+)", text) or re.search(r"PID=(\d+)", text)
     result["sv_pid"] = int(m.group(1)) if m else None
     result["marker"] = ("MARKER=EXISTS" in text) or ("MARKER-EXISTS" in text)
@@ -1058,22 +1109,34 @@ def health_check(editor_page, tag: str) -> dict:
             if m_alt:
                 result["tasks"][task] = int(m_alt.group(1))
 
-    # 自动修复：仅对未 RUNNING 的任务 start all（不影响已运行任务），复查一次
+    # 自动修复：若存在未 RUNNING 任务则拉起并复查一次
     dead = [t for t, pid in result["tasks"].items() if pid is None]
     if dead and AUTO_FIX and HEALTHCHECK_TASKS:
-        log(tag, f"🔧 发现未运行任务 {dead}，执行 supervisorctl start all ...")
         fix_nonce = uuid.uuid4().hex[:8]
         fix_start = f"FIX_START_{fix_nonce}"
         fix_end = f"FIX_END_{fix_nonce}"
-        fix_cmd = (
-            f"echo {fix_start}; "
-            f"supervisorctl -c {SUPERVISOR_CONF} start all >/dev/null 2>&1; "
-            f"sleep 3; supervisorctl -c {SUPERVISOR_CONF} status 2>&1; "
-            f"echo {fix_end}"
-        )
+        if result["mode"] == "process":
+            log(tag, f"🔧 发现未运行任务 {dead}，执行 ~/.local/bin/autostart.sh ...")
+            fix_cmd = (
+                f"echo {fix_start}; "
+                f'[ -x "$HOME/.local/bin/autostart.sh" ] && "$HOME/.local/bin/autostart.sh"; '
+                f"sleep 2; "
+                f'for t in {tasks_space}; do p=$(pgrep -x "$t" | head -1); '
+                f'if [ -n "$p" ]; then echo "$t RUNNING pid $p"; else echo "$t STOPPED"; fi; done; '
+                f"echo {fix_end}"
+            )
+        else:
+            log(tag, f"🔧 发现未运行任务 {dead}，执行 supervisorctl start all ...")
+            fix_cmd = (
+                f"echo {fix_start}; "
+                f"supervisorctl -c {SUPERVISOR_CONF} start all >/dev/null 2>&1; "
+                f"sleep 3; supervisorctl -c {SUPERVISOR_CONF} status 2>&1; "
+                f"echo {fix_end}"
+            )
         paste_command(editor_page, fix_cmd, ta)
         fix_deadline = time.time() + 20
         fix_text = ""
+        r_text = ""
         while time.time() < fix_deadline:
             time.sleep(2.5)
             r_text = read_terminal_text(editor_page, ta=ta, tag=tag)
@@ -1099,23 +1162,30 @@ def health_check(editor_page, tag: str) -> dict:
 
 
 def report_health(tag: str, account: dict, r: dict) -> bool:
-    ok_tasks = {t: p for t, p in r["tasks"].items() if p is not None}
     dead = [t for t, p in r["tasks"].items() if p is None] \
         if HEALTHCHECK_TASKS else []
-    healthy = (not dead) and (r["sv_pid"] is not None) and r["marker"]
+    is_process_mode = r.get("mode") == "process"
+    healthy = (not dead) if is_process_mode else ((not dead) and (r["sv_pid"] is not None) and r["marker"])
 
     log(tag, "--------- 健康检查结果 ---------")
-    log(tag, f"supervisord pid : {r['sv_pid']}")
-    log(tag, f"bootstrap 标记  : {'存在' if r['marker'] else '缺失'}")
+    if is_process_mode:
+        log(tag, "检查模式        : process (直检进程)")
+    else:
+        log(tag, f"supervisord pid : {r['sv_pid']}")
+        log(tag, f"bootstrap 标记  : {'存在' if r['marker'] else '缺失'}")
     for t, p in r["tasks"].items():
         log(tag, f"  {'✅' if p else '❌'} {t:24s} {'RUNNING pid=' + str(p) if p else 'NOT RUNNING'}")
     log(tag, f"结论: {'✅ 应用运行正常' if healthy else '❌ 应用异常'}")
 
+    summary_rows = (
+        "| 检查模式 | process (直检进程) |\n"
+        if is_process_mode
+        else f"| supervisord pid | {r['sv_pid']} |\n| bootstrap 标记 | {'✅' if r['marker'] else '❌'} |\n"
+    )
     gh_summary(
         f"### [{tag}] {account['space'] or account['user']}\n"
         f"| 项目 | 结果 |\n|---|---|\n"
-        f"| supervisord pid | {r['sv_pid']} |\n"
-        f"| bootstrap 标记 | {'✅' if r['marker'] else '❌'} |\n"
+        + summary_rows
         + "".join(
             f"| {t} | {'✅ RUNNING pid=' + str(p) if p else '❌ NOT RUNNING'} |\n"
             for t, p in r["tasks"].items()
