@@ -37,7 +37,7 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           TG_API_HOST: ${{ secrets.TG_API_HOST }}
           HEALTHCHECK_ENABLED: 'true'
-          HEALTHCHECK_TASKS: 'ttyd;cloudflared'
+          HEALTHCHECK_TASKS: 'ttyd;cloudflared;opencode'
           BOOTSTRAP_WAIT_SEC: '10'
           AUTO_FIX: 'true'
           FAIL_ON_UNHEALTHY: 'true'
