@@ -62,7 +62,7 @@ FAIL_ON_UNHEALTHY = env_bool("FAIL_ON_UNHEALTHY", False)
 
 STAY_SECONDS = env_int("STAY_SECONDS", 60)
 BOOTSTRAP_WAIT_SEC = env_int("BOOTSTRAP_WAIT_SEC", 40)
-START_TIMEOUT_SEC = env_int("START_TIMEOUT_SEC", 300)
+START_TIMEOUT_SEC = env_int("START_TIMEOUT_SEC", 600)
 EDITOR_TIMEOUT_SEC = env_int("EDITOR_TIMEOUT_SEC", 180)
 
 SUPERVISOR_CONF = os.environ.get(
@@ -625,13 +625,15 @@ def start_space_if_stopped(page, tag: str, initial_status: str = None, space_nam
             time.sleep(2)
             return
 
-        # 仅当长时间（超过 60s）持续为 UNKNOWN 时才进行单次页面重载并等待重新渲染
-        if status == "UNKNOWN" and (time.time() - last_reload > 60):
-            log(tag, "⚠️ 状态读取异常，重新加载控制台页面...")
+        # 当持续处于 STARTING 超过 90s 或 UNKNOWN 超过 60s 时，重新加载控制台页面刷新最新状态
+        should_reload = (status == "STARTING" and (time.time() - last_reload > 90)) or \
+                        (status == "UNKNOWN" and (time.time() - last_reload > 60))
+        if should_reload:
+            log(tag, f"⚠️ 空间持续处于 {status}，重新加载控制台页面刷新最新状态...")
             try:
                 page.reload(wait_until="domcontentloaded", timeout=25000)
-            except Exception:
-                pass
+            except Exception as e:
+                log(tag, f"⚠️ 页面重载异常: {e}")
             last_reload = time.time()
             wait_dev_spaces_loaded(page, tag, timeout_sec=25, space_name=space_name)
 

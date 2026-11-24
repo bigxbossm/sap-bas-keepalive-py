@@ -39,6 +39,7 @@ jobs:
           HEALTHCHECK_ENABLED: 'true'
           HEALTHCHECK_TASKS: 'ttyd;cloudflared;opencode'
           BOOTSTRAP_WAIT_SEC: '10'
+          START_TIMEOUT_SEC: '600'
           AUTO_FIX: 'true'
           FAIL_ON_UNHEALTHY: 'true'
           STAY_SECONDS: '60'
